@@ -182,13 +182,27 @@ export function SignerDashboard({ userEmail }: { userEmail: string }) {
                         <ChevronRight className="w-4 h-4" />
                       </Link>
                     ) : (
-                      <Link 
-                        href={`/sign/${doc.token}`}
-                        className="flex items-center gap-2 px-6 py-3 rounded-xl bg-white/5 text-slate-400 font-bold hover:bg-white/10 transition-all"
-                      >
-                        View Record
-                        <ChevronRight className="w-4 h-4" />
-                      </Link>
+                      <div className="flex items-center gap-2">
+                        <Link 
+                          href={`/sign/${doc.token}`}
+                          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-white/5 text-slate-400 font-bold hover:bg-white/10 transition-all"
+                        >
+                          View Record
+                          <ChevronRight className="w-4 h-4" />
+                        </Link>
+                        {doc.rams_documents.status === 'completed' && (
+                          <button 
+                            onClick={() => {
+                              const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/rams/${doc.rams_documents.file_path.replace('.pdf', '_final.pdf')}`;
+                              window.open(url, '_blank');
+                            }}
+                            className="p-3 rounded-xl bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 transition-all border border-emerald-500/20"
+                            title="Download Final PDF"
+                          >
+                            <FileText className="w-5 h-5" />
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>

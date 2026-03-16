@@ -1,123 +1,157 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { PDFDocument } from 'pdf-lib';
-import { createClient } from '@supabase/supabase-js';
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+import { PDFDocument } from "pdf-lib";
+import nodemailer from "nodemailer";
 
-const getSupabaseAdmin = () => {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) throw new Error("Supabase config missing");
-  return createClient(url, key);
-};
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY! // Use service role to bypass RLS for finalization
+);
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = getSupabaseAdmin();
     const { ramsId } = await req.json();
 
-    // 1. Fetch Document + Signers + Template Fields
-    const { data: document, error: docError } = await supabase
-      .from('rams_documents')
-      .select('*, signers(*)')
-      .eq('id', ramsId)
+    if (!ramsId) {
+      return NextResponse.json({ error: "RAMS ID is required" }, { status: 400 });
+    }
+
+    // 1. Fetch RAMS document and signers
+    const { data: rams, error: ramsError } = await supabase
+      .from("rams_documents")
+      .select("*, signers(*)")
+      .eq("id", ramsId)
       .single();
 
-    if (docError || !document) throw new Error('Document not found');
+    if (ramsError || !rams) {
+      return NextResponse.json({ error: "RAMS not found" }, { status: 404 });
+    }
 
+    // 2. Fetch template fields to know where to place signatures
     const { data: fields, error: fieldsError } = await supabase
-      .from('template_signature_fields')
-      .select('*')
-      .eq('template_id', document.template_id);
+      .from("template_signature_fields")
+      .select("*")
+      .eq("template_id", rams.template_id);
 
     if (fieldsError) throw fieldsError;
 
-    // 2. Fetch Original PDF from Storage
+    // 3. Download original PDF
     const { data: pdfBlob, error: downloadError } = await supabase.storage
-      .from('rams')
-      .download(document.file_path);
+      .from("rams")
+      .download(rams.file_path);
 
     if (downloadError) throw downloadError;
 
-    const originalPdfBytes = await pdfBlob.arrayBuffer();
-    const pdfDoc = await PDFDocument.load(originalPdfBytes);
+    const pdfBytes = await pdfBlob.arrayBuffer();
+    const pdfDoc = await PDFDocument.load(pdfBytes);
 
-    // 3. For each signer that has signed, embed the signature
-    for (const signer of document.signers) {
-      if (!signer.signature_data) continue;
+    // 4. Overlay signatures
+    for (const field of fields) {
+      const signer = rams.signers.find((s: any) => s.role_name === field.role_name);
+      if (signer && signer.signature_data) {
+        try {
+          // Convert base64 signature to image
+          const signatureImageBytes = Buffer.from(
+            signer.signature_data.split(",")[1],
+            "base64"
+          );
+          const signatureImage = await pdfDoc.embedPng(signatureImageBytes);
 
-      const field = fields.find(f => f.role_name === signer.role_name);
-      if (!field) continue;
+          const pages = pdfDoc.getPages();
+          const page = pages[field.page_number - 1];
+          const { width, height } = page.getSize();
 
-      const signatureImage = await pdfDoc.embedPng(signer.signature_data);
-      const pages = pdfDoc.getPages();
-      const page = pages[field.page_number - 1]; // 0-indexed
+          // Convert percentage coordinates to PDF points
+          // placement_x/y are center points
+          const fieldWidth = (field.width / 100) * width;
+          const fieldHeight = (field.height / 100) * height;
+          const x = (field.placement_x / 100) * width - fieldWidth / 2;
+          const y = height - (field.placement_y / 100) * height - fieldHeight / 2;
 
-      const { width, height } = page.getSize();
-      
-      // Convert % coordinates to PDF points (1 pt = 1/72 inch)
-      const xPos = (field.placement_x / 100) * width;
-      const yPos = height - ((field.placement_y / 100) * height); // PDF y starts from bottom
-
-      const sigWidth = (field.width / 100) * width || 100;
-      const sigHeight = (field.height / 100) * height || 40;
-
-      // Inject Signature Image
-      page.drawImage(signatureImage, {
-        x: xPos - (sigWidth / 2),
-        y: yPos - (sigHeight / 2),
-        width: sigWidth,
-        height: sigHeight,
-      });
-
-      // If it's a grid cell (like page 20), also inject Name and Date in adjacent columns
-      if (field.is_grid_cell) {
-        // "PRINT NAME" is usually to the left, "DATE" to the right of SIGNATURE
-        // We'll offset based on the signature position
-        const textY = yPos - 5; // Slight vertical adjustment
-        const fontSize = 10;
-
-        // Draw Name (offset left)
-        page.drawText(signer.name, {
-          x: xPos - (sigWidth * 1.5),
-          y: textY,
-          size: fontSize,
-        });
-
-        // Draw Date (offset right)
-        const dateStr = new Date(signer.signed_at).toLocaleDateString();
-        page.drawText(dateStr, {
-          x: xPos + (sigWidth * 0.8),
-          y: textY,
-          size: fontSize,
-        });
+          page.drawImage(signatureImage, {
+            x,
+            y,
+            width: fieldWidth,
+            height: fieldHeight,
+          });
+        } catch (imgErr) {
+          console.error(`Error embedding signature for ${field.role_name}:`, imgErr);
+        }
       }
     }
 
-    // 4. Save Final PDF
-    const finalPdfBytes = await pdfDoc.save();
-    const finalFileName = `final_${document.file_path}`;
+    // 5. Save finalized PDF
+    const finalizedPdfBytes = await pdfDoc.save();
+    const finalFileName = `final/finalized_${ramsId}_${Date.now()}.pdf`;
 
     const { error: uploadError } = await supabase.storage
-      .from('rams')
-      .upload(finalFileName, finalPdfBytes, {
-        contentType: 'application/pdf',
-        upsert: true
+      .from("rams")
+      .upload(finalFileName, finalizedPdfBytes, {
+        contentType: "application/pdf",
+        upsert: true,
       });
 
     if (uploadError) throw uploadError;
 
-    // 5. Update Document Status
-    await supabase
-      .from('rams_documents')
-      .update({ 
-        status: 'completed',
-        final_file_path: finalFileName 
-      })
-      .eq('id', ramsId);
+    // 6. Update RAMS status to completed
+    try {
+      await supabase
+        .from("rams_documents")
+        .update({ 
+          status: "completed", 
+          final_file_path: finalFileName,
+          completed_at: new Date().toISOString()
+        })
+        .eq("id", ramsId);
+    } catch (updateErr) {
+      console.warn("Could not update final_file_path (likely missing column), attempting status-only update:", updateErr);
+      await supabase
+        .from("rams_documents")
+        .update({ status: "completed" })
+        .eq("id", ramsId);
+    }
 
-    return NextResponse.json({ success: true, filePath: finalFileName });
+    // 7. Notify Admin via Email
+    await sendAdminNotification(rams.name);
+
+    return NextResponse.json({ 
+      success: true, 
+      finalPath: finalFileName 
+    });
 
   } catch (error: any) {
-    console.error('Finalize Error:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    console.error("Finalization error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+async function sendAdminNotification(docName: string) {
+  // Use environment variables for SMTP settings
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT),
+    secure: process.env.SMTP_SECURE === "true",
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+  });
+
+  const mailOptions = {
+    from: `"TRE RAMS System" <${process.env.SMTP_USER}>`,
+    to: "info@treenergy.co.uk",
+    subject: `Document Completed: ${docName}`,
+    text: `Greetings,\n\nThe RAMS document "${docName}" has been fully signed by all parties and is now available for download in the Admin Portal.\n\nBest Regards,\nTRE Energy Team`,
+  };
+
+  try {
+    if (process.env.SMTP_HOST) {
+        await transporter.sendMail(mailOptions);
+        console.log("Admin notification email sent.");
+    } else {
+        console.log("SMTP not configured, skipping email notification.");
+    }
+  } catch (err) {
+    console.error("Failed to send admin notification email:", err);
   }
 }

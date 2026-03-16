@@ -18,11 +18,16 @@ BEGIN
     END IF;
 END $$;
 
--- 3. Update signers table to support assignment linkage
+END $$;
+
+-- 3.5. Update rams_documents for finalization
 DO $$ 
 BEGIN 
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='signers' AND column_name='assigned_user_id') THEN
-        ALTER TABLE public.signers ADD COLUMN assigned_user_id uuid REFERENCES public.registered_users(id);
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='rams_documents' AND column_name='final_file_path') THEN
+        ALTER TABLE public.rams_documents ADD COLUMN final_file_path text;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='rams_documents' AND column_name='completed_at') THEN
+        ALTER TABLE public.rams_documents ADD COLUMN completed_at timestamptz;
     END IF;
 END $$;
 

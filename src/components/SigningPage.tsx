@@ -62,75 +62,77 @@ export default function SigningPage({ token }: { token: string }) {
 
   useEffect(() => {
     async function init() {
-      // 1. Fetch current signer
-      const { data: signerData, error: signerError } = await supabase
-        .from("signers")
-        .select("*, rams_documents(*)")
-        .eq("token", token)
-        .single();
-
-      if (signerError || !signerData) {
-        console.error(signerError);
-        return;
-      }
-
-      setSigner(signerData);
-      setDocument(signerData.rams_documents);
-
-      // 2. Fetch all signers for this document
-      const { data: signers } = await supabase
-        .from("signers")
-        .select("id, name, role_name, status, signature_data")
-        .eq("rams_id", signerData.rams_id);
-      
-      if (signers) setAllSigners(signers);
-
-      // 3. Fetch template fields
-      const { data: templateFields } = await supabase
-        .from("template_signature_fields")
-        .select("*")
-        .eq("template_id", signerData.rams_documents.template_id);
-      
-      if (templateFields) setFields(templateFields);
-
-      // 4. Secure check removed: User is already signed in to the portal
-      if (signerData.assigned_user_id) {
-        const { data: userData } = await supabase
-          .from("registered_users")
-          .select("*")
-          .eq("id", signerData.assigned_user_id)
+      try {
+        // 1. Fetch current signer with document
+        const { data: signerData, error: signerError } = await supabase
+          .from("signers")
+          .select("*, rams_documents(*)")
+          .eq("token", token)
           .single();
-        
-        if (userData) {
-          setAssignedUser(userData);
-          // Auto-verify since user is already in a secure session
+
+        if (signerError || !signerData) {
+          console.error(signerError);
+          return;
         }
-      }
 
-      setLoading(false);
+        setSigner(signerData);
+        setDocument(signerData.rams_documents);
 
-      // 5. Set up Realtime listener
-      const channel = supabase
-        .channel(`rams-${signerData.rams_id}`)
-        .on(
-          "postgres_changes",
-          {
-            event: "UPDATE",
-            schema: "public",
-            table: "signers",
-            filter: `rams_id=eq.${signerData.rams_id}`,
-          },
-          (payload) => {
-            setAllSigners((prev) => 
-              prev.map(s => s.id === payload.new.id ? { ...s, ...payload.new } : s)
-            );
+        // 2 & 3. Fetch all signers and template fields in parallel
+        const [signersRes, fieldsRes] = await Promise.all([
+          supabase
+            .from("signers")
+            .select("id, name, role_name, status, signature_data")
+            .eq("rams_id", signerData.rams_id),
+          supabase
+            .from("template_signature_fields")
+            .select("*")
+            .eq("template_id", signerData.rams_documents.template_id)
+        ]);
+
+        if (signersRes.data) setAllSigners(signersRes.data);
+        if (fieldsRes.data) setFields(fieldsRes.data);
+
+        // 4. Secure check removed: User is already signed in to the portal
+        if (signerData.assigned_user_id) {
+          const { data: userData } = await supabase
+            .from("registered_users")
+            .select("*")
+            .eq("id", signerData.assigned_user_id)
+            .single();
+          
+          if (userData) {
+            setAssignedUser(userData);
           }
-        )
-        .subscribe();
+        }
 
-      return () => {
-        supabase.removeChannel(channel);
-      };
+        // 5. Set up Realtime listener inside the block where signerData is available
+        const channel = supabase
+          .channel(`rams-${signerData.rams_id}`)
+          .on(
+            "postgres_changes",
+            {
+              event: "UPDATE",
+              schema: "public",
+              table: "signers",
+              filter: `rams_id=eq.${signerData.rams_id}`,
+            },
+            (payload) => {
+              setAllSigners((prev) => 
+                prev.map(s => s.id === payload.new.id ? { ...s, ...payload.new } : s)
+              );
+            }
+          )
+          .subscribe();
+
+        return () => {
+          supabase.removeChannel(channel);
+        };
+      } catch (err) {
+        console.error("Initialization error:", err);
+      } finally {
+        setLoading(false);
+      }
     }
 
     init();
@@ -173,7 +175,25 @@ export default function SigningPage({ token }: { token: string }) {
       if (error) throw error;
       
       const now = new Date().toISOString();
-      setSigner({ ...signer, status: "signed", signature_data: signatureData, signed_at: now });
+      const updatedSigner = { ...signer, status: "signed", signature_data: signatureData, signed_at: now };
+      setSigner(updatedSigner);
+
+      // Check if this was the last signature
+      const { data: latestSigners } = await supabase
+        .from("signers")
+        .select("status")
+        .eq("rams_id", signer.rams_id);
+      
+      const allSigned = latestSigners?.every(s => s.status === 'signed');
+      if (allSigned) {
+        console.log("All signers have signed! Triggering finalization...");
+        fetch('/api/finalize-pdf', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ramsId: signer.rams_id })
+        }).catch(err => console.error("Finalization trigger failed:", err));
+      }
+
       setIsSigning(false);
     } catch (error) {
       console.error(error);
@@ -206,6 +226,25 @@ export default function SigningPage({ token }: { token: string }) {
         </div>
         
         <div className="flex items-center gap-4">
+          <div className="flex items-center justify-center gap-2 bg-white/5 border border-white/10 rounded-full px-2 py-1">
+            <button 
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage <= 1}
+              className="p-1.5 hover:bg-white/10 rounded-full disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4 text-slate-400" />
+            </button>
+            <span className="text-[10px] font-bold text-slate-300 min-w-[60px] text-center">
+              PAGE {currentPage} / {numPages || "..."}
+            </span>
+            <button 
+              onClick={() => setCurrentPage(p => Math.min(numPages, p + 1))}
+              disabled={currentPage >= numPages}
+              className="p-1.5 hover:bg-white/10 rounded-full disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronRight className="w-4 h-4 text-slate-400" />
+            </button>
+          </div>
           <div className="flex items-center gap-2 text-[10px] font-bold bg-white/5 px-3 py-1.5 rounded-full border border-white/10 text-slate-400">
              <span>{numPages} PAGES TOTAL</span>
           </div>
@@ -222,72 +261,70 @@ export default function SigningPage({ token }: { token: string }) {
             }}
             onLoadSuccess={({ numPages }) => setNumPages(numPages)}
             loading={<div className="h-[800px] w-[600px] flex items-center justify-center bg-slate-900/50"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}
-            className="flex flex-col items-center gap-8"
+            className="flex flex-col items-center"
           >
-            {Array.from({ length: numPages }, (_, i) => i + 1).map((pageNo) => (
-              <div 
-                key={pageNo}
-                className="relative shadow-2xl rounded-sm transition-all duration-500 bg-white"
-                style={{ height: 'fit-content' }}
-              >
-                <Page 
-                  pageNumber={pageNo} 
-                  renderTextLayer={false} 
-                  renderAnnotationLayer={false}
-                  width={Math.min(containerWidth - 64, 1100)}
-                  className="shadow-2xl"
-                />
+            <div 
+              className="relative shadow-2xl rounded-sm transition-all duration-500 bg-white"
+              style={{ height: 'fit-content' }}
+            >
+              <Page 
+                pageNumber={currentPage} 
+                renderTextLayer={false} 
+                renderAnnotationLayer={false}
+                width={Math.min(containerWidth - 64, 1100)}
+                className="shadow-2xl"
+                loading={<div className="h-[800px] w-full flex items-center justify-center bg-slate-900/50"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}
+              />
 
-                {/* Per-Page Signatures Overlay */}
-                {fields.filter(f => f.page_number === pageNo).map((field) => {
-                  const signerForField = allSigners.find(s => s.role_name === field.role_name);
-                  if (!signerForField?.signature_data) return null;
+              {/* Per-Page Signatures Overlay */}
+              {fields.filter(f => f.page_number === currentPage).map((field) => {
+                const signerForField = allSigners.find(s => s.role_name === field.role_name);
+                if (!signerForField?.signature_data) return null;
 
-                  return (
-                    <div
-                      key={field.role_name}
-                      style={{
-                        position: 'absolute',
-                        left: `${field.placement_x}%`,
-                        top: `${field.placement_y}%`,
-                        width: `${field.width}%`,
-                        height: `${field.height}%`,
-                        transform: 'translate(-50%, -50%)'
-                      }}
-                      className="animate-in fade-in zoom-in duration-500 group"
-                    >
-                      <img src={signerForField.signature_data} className="w-full h-full object-contain mix-blend-multiply" />
-                      <div className="absolute -top-5 left-0 right-0 text-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <span className="bg-black/80 backdrop-blur-md text-[8px] font-bold text-white px-2 py-0.5 rounded-full uppercase tracking-tighter">
-                          {signerForField.name}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-
-                {/* "Sign Here" Marker */}
-                {!signer.signature_data && isVerified && currentRoleField?.page_number === pageNo && (
+                return (
                   <div
+                    key={field.role_name}
                     style={{
                       position: 'absolute',
-                      left: `${currentRoleField.placement_x}%`,
-                      top: `${currentRoleField.placement_y}%`,
+                      left: `${field.placement_x}%`,
+                      top: `${field.placement_y}%`,
+                      width: `${field.width}%`,
+                      height: `${field.height}%`,
                       transform: 'translate(-50%, -50%)'
                     }}
-                    className="flex flex-col items-center gap-2 animate-bounce cursor-pointer z-20"
-                    onClick={() => {
-                        document.getElementById('signing-panel')?.scrollIntoView({ behavior: 'smooth' });
-                    }}
+                    className="animate-in fade-in zoom-in duration-500 group"
                   >
-                    <div className="bg-primary text-primary-foreground text-[10px] font-bold px-3 py-1 rounded-full shadow-lg shadow-primary/20 flex items-center gap-2">
-                        <Edit3 className="w-3 h-3" /> Sign Here
+                    <img src={signerForField.signature_data} className="w-full h-full object-contain mix-blend-multiply" />
+                    <div className="absolute -top-5 left-0 right-0 text-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="bg-black/80 backdrop-blur-md text-[8px] font-bold text-white px-2 py-0.5 rounded-full uppercase tracking-tighter">
+                        {signerForField.name}
+                      </span>
                     </div>
-                    <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-primary shadow-primary/20"></div>
                   </div>
-                )}
-              </div>
-            ))}
+                );
+              })}
+
+              {/* "Sign Here" Marker */}
+              {!signer.signature_data && isVerified && currentRoleField?.page_number === currentPage && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: `${currentRoleField.placement_x}%`,
+                    top: `${currentRoleField.placement_y}%`,
+                    transform: 'translate(-50%, -50%)'
+                  }}
+                  className="flex flex-col items-center gap-2 animate-bounce cursor-pointer z-20"
+                  onClick={() => {
+                      document.getElementById('signing-panel')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                >
+                  <div className="bg-primary text-primary-foreground text-[10px] font-bold px-3 py-1 rounded-full shadow-lg shadow-primary/20 flex items-center gap-2">
+                      <Edit3 className="w-3 h-3" /> Sign Here
+                  </div>
+                  <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-primary shadow-primary/20"></div>
+                </div>
+              )}
+            </div>
           </Document>
 
           {numPages > 0 && (

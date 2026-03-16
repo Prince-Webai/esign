@@ -8,6 +8,7 @@ export async function POST(req: NextRequest) {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     const signingLink = `${baseUrl}/sign/${token}`;
 
+    // ensure function is called
     await sendSigningEmail(email, name, documentName, signingLink);
 
     return NextResponse.json({ success: true });

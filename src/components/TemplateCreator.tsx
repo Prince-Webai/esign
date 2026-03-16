@@ -50,17 +50,8 @@ export function TemplateCreator({ templateId }: { templateId?: string }) {
         if (template) {
           setTemplateName(template.name);
           if (template.preview_url) {
-            try {
-              const { data: blob } = await supabase.storage
-                .from('templates')
-                .download(template.preview_url);
-              if (blob) {
-                const fileObj = new File([blob], `${template.name}.pdf`, { type: 'application/pdf' });
-                setFile(fileObj);
-              }
-            } catch (err) {
-              console.error("Error loading template PDF:", err);
-            }
+            // Store the existing path in the file state
+            setFile(template.preview_url);
           }
         }
 
@@ -250,7 +241,7 @@ export function TemplateCreator({ templateId }: { templateId?: string }) {
       let finalPath = "";
       let currentTemplateId = templateId;
 
-      // 1. Upload sample PDF
+      // 1. Upload sample PDF only if it's a new File object
       if (file && typeof file !== 'string') {
         console.log("Uploading PDF to storage...");
         const fileExt = (file as File).name.split('.').pop();
@@ -266,8 +257,8 @@ export function TemplateCreator({ templateId }: { templateId?: string }) {
         finalPath = uploadData.path;
         console.log("PDF uploaded successfully:", finalPath);
       } else if (typeof file === 'string') {
-        // Extract path from the URL if possible, or keep if already a path
-        finalPath = file.split('/').pop() || "";
+        // Use the existing path
+        finalPath = file;
         console.log("Using existing PDF path:", finalPath);
       }
 
@@ -369,7 +360,13 @@ export function TemplateCreator({ templateId }: { templateId?: string }) {
                   isAddMode ? "cursor-crosshair" : "cursor-default"
                 )}
               >
-                <Document file={file} onLoadSuccess={onDocumentLoadSuccess}>
+                <Document 
+                  file={typeof file === 'string' 
+                    ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/templates/${file}` 
+                    : file
+                  } 
+                  onLoadSuccess={onDocumentLoadSuccess}
+                >
                   <Page 
                     pageNumber={currentPage} 
                     renderTextLayer={false}
