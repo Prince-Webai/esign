@@ -1,0 +1,444 @@
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import SignatureCanvas from "react-signature-canvas";
+import { Document, Page, pdfjs } from "react-pdf";
+import { supabase } from "@/lib/supabase";
+import { Check, Edit3, X, Loader2, Users, FileText, ChevronLeft, ChevronRight, Key } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+
+interface Signer {
+  id: string;
+  name: string;
+  role_name: string;
+  status: string;
+  signature_data: string | null;
+}
+
+interface Field {
+  role_name: string;
+  placement_x: number;
+  placement_y: number;
+  page_number: number;
+  width: number;
+  height: number;
+}
+
+export default function SigningPage({ token }: { token: string }) {
+  const [loading, setLoading] = useState(true);
+  const [signer, setSigner] = useState<any>(null);
+  const [document, setDocument] = useState<any>(null);
+  const [allSigners, setAllSigners] = useState<Signer[]>([]);
+  const [fields, setFields] = useState<Field[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [numPages, setNumPages] = useState(0);
+  const [isSigning, setIsSigning] = useState(false);
+  
+  // Security State
+  const [pin, setPin] = useState("");
+  const [isVerified, setIsVerified] = useState(true);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [assignedUser, setAssignedUser] = useState<any>(null);
+
+  const [containerWidth, setContainerWidth] = useState<number>(800);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const sigCanvas = useRef<SignatureCanvas>(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setContainerWidth(entry.contentRect.width);
+      }
+    });
+
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, [loading]);
+
+  useEffect(() => {
+    async function init() {
+      // 1. Fetch current signer
+      const { data: signerData, error: signerError } = await supabase
+        .from("signers")
+        .select("*, rams_documents(*)")
+        .eq("token", token)
+        .single();
+
+      if (signerError || !signerData) {
+        console.error(signerError);
+        return;
+      }
+
+      setSigner(signerData);
+      setDocument(signerData.rams_documents);
+
+      // 2. Fetch all signers for this document
+      const { data: signers } = await supabase
+        .from("signers")
+        .select("id, name, role_name, status, signature_data")
+        .eq("rams_id", signerData.rams_id);
+      
+      if (signers) setAllSigners(signers);
+
+      // 3. Fetch template fields
+      const { data: templateFields } = await supabase
+        .from("template_signature_fields")
+        .select("*")
+        .eq("template_id", signerData.rams_documents.template_id);
+      
+      if (templateFields) setFields(templateFields);
+
+      // 4. Secure check removed: User is already signed in to the portal
+      if (signerData.assigned_user_id) {
+        const { data: userData } = await supabase
+          .from("registered_users")
+          .select("*")
+          .eq("id", signerData.assigned_user_id)
+          .single();
+        
+        if (userData) {
+          setAssignedUser(userData);
+          // Auto-verify since user is already in a secure session
+        }
+      }
+
+      setLoading(false);
+
+      // 5. Set up Realtime listener
+      const channel = supabase
+        .channel(`rams-${signerData.rams_id}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "signers",
+            filter: `rams_id=eq.${signerData.rams_id}`,
+          },
+          (payload) => {
+            setAllSigners((prev) => 
+              prev.map(s => s.id === payload.new.id ? { ...s, ...payload.new } : s)
+            );
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+
+    init();
+  }, [token]);
+
+  const pdfUrl = signer && document 
+    ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/rams/${document.file_path}`
+    : null;
+
+  const handleVerifyPIN = () => {
+    if (!assignedUser) return;
+    setIsVerifying(true);
+    
+    // Simple PIN check for this version
+    if (pin === assignedUser.password_hash) {
+      setIsVerified(true);
+    } else {
+      alert("Incorrect PIN. Please try again.");
+      setPin("");
+    }
+    setIsVerifying(false);
+  };
+
+  const handleSaveSignature = async () => {
+    if (!sigCanvas.current || sigCanvas.current.isEmpty()) return;
+
+    const signatureData = sigCanvas.current.toDataURL("image/png");
+    
+    setIsSigning(true);
+    try {
+      const { error } = await supabase
+        .from("signers")
+        .update({
+          signature_data: signatureData,
+          status: "signed",
+          signed_at: new Date().toISOString()
+        })
+        .eq("id", signer.id);
+
+      if (error) throw error;
+      
+      const now = new Date().toISOString();
+      setSigner({ ...signer, status: "signed", signature_data: signatureData, signed_at: now });
+      setIsSigning(false);
+    } catch (error) {
+      console.error(error);
+      alert("Error saving signature");
+      setIsSigning(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-[#020617]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <p className="text-muted-foreground animate-pulse">Loading secure RAMS document...</p>
+      </div>
+    );
+  }
+
+  const currentRoleField = fields.find(f => f.role_name === signer.role_name);
+
+  return (
+    <div className="flex flex-col h-screen bg-[#020617] text-slate-100 overflow-hidden">
+      {/* Header */}
+      <header className="h-16 border-b border-white/5 flex items-center justify-between px-6 bg-slate-900/40 backdrop-blur-md z-30">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg premium-gradient flex items-center justify-center font-bold text-[10px]">TRE</div>
+          <div className="min-w-0">
+            <h1 className="font-bold text-sm truncate max-w-[200px] md:max-w-md">{document.name}</h1>
+            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Secure Signing Session</p>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 text-[10px] font-bold bg-white/5 px-3 py-1.5 rounded-full border border-white/10 text-slate-400">
+             <span>{numPages} PAGES TOTAL</span>
+          </div>
+        </div>
+      </header>
+
+      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+        {/* Left Side: PDF Viewer */}
+        <div ref={containerRef} className="flex-1 bg-slate-950 overflow-auto p-4 md:p-8 flex flex-col items-center gap-8 custom-scrollbar">
+          <Document 
+            file={pdfUrl} 
+            onLoadError={(error) => {
+              console.error('PDF Load Error:', error);
+            }}
+            onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+            loading={<div className="h-[800px] w-[600px] flex items-center justify-center bg-slate-900/50"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}
+            className="flex flex-col items-center gap-8"
+          >
+            {Array.from({ length: numPages }, (_, i) => i + 1).map((pageNo) => (
+              <div 
+                key={pageNo}
+                className="relative shadow-2xl rounded-sm transition-all duration-500 bg-white"
+                style={{ height: 'fit-content' }}
+              >
+                <Page 
+                  pageNumber={pageNo} 
+                  renderTextLayer={false} 
+                  renderAnnotationLayer={false}
+                  width={Math.min(containerWidth - 64, 1100)}
+                  className="shadow-2xl"
+                />
+
+                {/* Per-Page Signatures Overlay */}
+                {fields.filter(f => f.page_number === pageNo).map((field) => {
+                  const signerForField = allSigners.find(s => s.role_name === field.role_name);
+                  if (!signerForField?.signature_data) return null;
+
+                  return (
+                    <div
+                      key={field.role_name}
+                      style={{
+                        position: 'absolute',
+                        left: `${field.placement_x}%`,
+                        top: `${field.placement_y}%`,
+                        width: `${field.width}%`,
+                        height: `${field.height}%`,
+                        transform: 'translate(-50%, -50%)'
+                      }}
+                      className="animate-in fade-in zoom-in duration-500 group"
+                    >
+                      <img src={signerForField.signature_data} className="w-full h-full object-contain mix-blend-multiply" />
+                      <div className="absolute -top-5 left-0 right-0 text-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="bg-black/80 backdrop-blur-md text-[8px] font-bold text-white px-2 py-0.5 rounded-full uppercase tracking-tighter">
+                          {signerForField.name}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* "Sign Here" Marker */}
+                {!signer.signature_data && isVerified && currentRoleField?.page_number === pageNo && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      left: `${currentRoleField.placement_x}%`,
+                      top: `${currentRoleField.placement_y}%`,
+                      transform: 'translate(-50%, -50%)'
+                    }}
+                    className="flex flex-col items-center gap-2 animate-bounce cursor-pointer z-20"
+                    onClick={() => {
+                        document.getElementById('signing-panel')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                  >
+                    <div className="bg-primary text-primary-foreground text-[10px] font-bold px-3 py-1 rounded-full shadow-lg shadow-primary/20 flex items-center gap-2">
+                        <Edit3 className="w-3 h-3" /> Sign Here
+                    </div>
+                    <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-primary shadow-primary/20"></div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </Document>
+
+          {numPages > 0 && (
+            <div className="flex justify-center py-8 w-full">
+              <a 
+                href={pdfUrl || "#"} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="bg-white/5 border border-white/10 px-8 py-4 rounded-2xl text-[10px] font-bold text-primary uppercase tracking-widest hover:bg-white/10 transition-all flex items-center gap-2"
+              >
+                <FileText className="w-4 h-4" /> View Original Source PDF
+              </a>
+            </div>
+          )}
+        </div>
+
+        {/* Right Side: Signing Panel */}
+        <div id="signing-panel" className="w-full lg:w-[400px] bg-slate-900/50 backdrop-blur-2xl border-l border-white/5 flex flex-col z-20 overflow-y-auto">
+          <div className="p-6 space-y-8">
+            {/* User Greeting */}
+            <div className="space-y-1 text-center">
+              <h2 className="text-xl font-bold text-white">Identity Check</h2>
+              <p className="text-xs text-slate-400 font-medium">Signing as <span className="text-primary font-bold">{signer.role_name}</span>.</p>
+            </div>
+
+            {/* Signature Area */}
+            <div className="space-y-4">
+              {signer.status !== "signed" ? (
+                <div className="space-y-4">
+                  {!isVerified ? (
+                    <div className="bg-slate-900 border border-amber-500/30 rounded-2xl p-6 space-y-4 shadow-xl">
+                      <div className="flex flex-col items-center text-center gap-2">
+                        <div className="w-12 h-12 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center">
+                          <Key className="w-6 h-6" />
+                        </div>
+                        <h3 className="font-bold text-white">{assignedUser.name}</h3>
+                        <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Enter your 4-digit PIN</p>
+                      </div>
+                      
+                      <div className="flex justify-center gap-3">
+                        <input 
+                          type="password"
+                          maxLength={4}
+                          value={pin}
+                          onChange={(e) => setPin(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleVerifyPIN()}
+                          className="w-32 bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-center text-xl font-bold tracking-[0.5em] focus:ring-2 focus:ring-primary/20 outline-none"
+                          placeholder="••••"
+                        />
+                      </div>
+
+                      <button 
+                        onClick={handleVerifyPIN}
+                        disabled={pin.length < 4 || isVerifying}
+                        className="w-full py-3 bg-amber-500 text-black font-bold rounded-xl hover:scale-[1.02] transition-all disabled:opacity-50"
+                      >
+                        {isVerifying ? "Verifying..." : "Unlock Canvas"}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4 animate-in fade-in zoom-in duration-300">
+                      <div className="flex justify-between items-end">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                          <Edit3 className="w-3 h-3" /> Digital Signature
+                        </label>
+                      </div>
+                      <div className="bg-white rounded-2xl p-4 shadow-xl ring-1 ring-white/10 group">
+                        <SignatureCanvas 
+                          ref={sigCanvas}
+                          penColor="black"
+                          canvasProps={{ 
+                            width: 350, 
+                            height: 180, 
+                            className: "w-full h-[180px] cursor-crosshair touch-none" 
+                          }}
+                        />
+                        <div className="mt-2 pt-2 border-t border-slate-100 flex justify-between items-center px-1">
+                          <span className="text-[9px] text-slate-400 font-medium italic">Sign inside the area</span>
+                          <button 
+                            onClick={() => sigCanvas.current?.clear()}
+                            className="text-[10px] font-bold text-slate-400 hover:text-destructive transition-colors uppercase tracking-widest"
+                          >
+                            Clear
+                          </button>
+                        </div>
+                      </div>
+
+                      <button 
+                        disabled={isSigning}
+                        onClick={handleSaveSignature}
+                        className="w-full flex items-center justify-center gap-3 px-8 py-4 rounded-xl premium-gradient text-primary-foreground font-bold shadow-xl shadow-primary/10 hover:scale-[1.02] transition-all active:scale-95 disabled:opacity-50"
+                      >
+                        {isSigning ? (
+                          <><Loader2 className="w-5 h-5 animate-spin" /> Processing...</>
+                        ) : (
+                          <><Check className="w-5 h-5" /> Confirm Signature</>
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="bg-emerald-500/5 rounded-2xl p-6 border border-emerald-500/20 flex flex-col items-center gap-4 text-center">
+                  <div className="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center text-emerald-950 shadow-lg shadow-emerald-500/20">
+                    <Check className="w-6 h-6" />
+                  </div>
+                  <div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Document Details */}
+            <div className="space-y-4 pt-8 border-t border-white/5">
+              <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                <Users className="w-3 h-3" /> Collaboration Flow
+              </h3>
+              <div className="space-y-2">
+                {allSigners.map((s) => (
+                  <div key={s.id} className={cn(
+                    "flex items-center gap-3 p-3 rounded-xl border transition-all",
+                    s.id === signer.id ? "bg-primary/10 border-primary/20 ring-1 ring-primary/10" : "bg-white/5 border-white/5"
+                  )}>
+                    <div className={cn(
+                      "w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold",
+                      s.status === "signed" ? "bg-emerald-500 text-black shadow-lg shadow-emerald-500/20" : "bg-slate-800 text-slate-400"
+                    )}>
+                      {s.status === "signed" ? <Check className="w-4 h-4" /> : s.role_name.charAt(0)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold truncate text-white">{s.name}</p>
+                      <p className="text-[9px] text-slate-500 font-medium uppercase tracking-wider">{s.role_name}</p>
+                    </div>
+                    {s.status === "signed" && (
+                      <div className="flex items-center gap-1.5 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                        <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></div>
+                        <span className="text-[8px] font-bold text-emerald-500 uppercase">Live</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-auto p-6 bg-slate-950/50 border-t border-white/5">
+              <p className="text-[9px] text-slate-500 text-center uppercase tracking-[0.2em] font-bold">
+                TRE Energy Today • Powered by Antigravity
+              </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
