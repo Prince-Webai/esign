@@ -13,6 +13,18 @@ export default function Dashboard() {
 
   useEffect(() => {
     async function fetchRAMS() {
+      // Session Protection
+      const session = localStorage.getItem("tre_user_session");
+      if (!session) {
+        window.location.href = "/login";
+        return;
+      }
+      const parsed = JSON.parse(session);
+      if (parsed.role !== 'admin') {
+        window.location.href = "/dashboard";
+        return;
+      }
+
       const { data } = await supabase
         .from("rams_documents")
         .select("*, signers(*)")

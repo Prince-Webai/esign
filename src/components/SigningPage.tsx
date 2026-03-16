@@ -5,6 +5,7 @@ import SignatureCanvas from "react-signature-canvas";
 import { Document, Page, pdfjs } from "react-pdf";
 import { supabase } from "@/lib/supabase";
 import { Check, Edit3, X, Loader2, Users, FileText, ChevronLeft, ChevronRight, Key } from "lucide-react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -389,12 +390,23 @@ export default function SigningPage({ token }: { token: string }) {
                   )}
                 </div>
               ) : (
-                <div className="bg-emerald-500/5 rounded-2xl p-6 border border-emerald-500/20 flex flex-col items-center gap-4 text-center">
-                  <div className="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center text-emerald-950 shadow-lg shadow-emerald-500/20">
-                    <Check className="w-6 h-6" />
+                <div className="bg-emerald-500/5 rounded-3xl p-8 border border-emerald-500/20 flex flex-col items-center gap-6 text-center animate-in fade-in zoom-in duration-500">
+                  <div className="w-20 h-20 rounded-full bg-emerald-500 flex items-center justify-center text-emerald-950 shadow-2xl shadow-emerald-500/40 border-4 border-emerald-400/50">
+                    <Check className="w-10 h-10 stroke-[3px]" />
                   </div>
-                  <div>
+                  <div className="space-y-2">
+                    <h3 className="text-2xl font-bold text-white tracking-tight">Document Secured</h3>
+                    <p className="text-slate-400 text-sm font-medium">Your digital signature has been verified and permanently attached to this RAMS.</p>
                   </div>
+                  
+                  <div className="w-full h-px bg-white/5 my-2"></div>
+                  
+                  <Link 
+                    href="/dashboard"
+                    className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl bg-white/5 border border-white/10 text-white font-bold hover:bg-white/10 transition-all uppercase tracking-widest text-xs"
+                  >
+                    Return to Dashboard
+                  </Link>
                 </div>
               )}
             </div>
