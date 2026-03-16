@@ -18,6 +18,12 @@ BEGIN
     END IF;
 END $$;
 
+-- 3. Update signers table to support assignment linkage
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='signers' AND column_name='assigned_user_id') THEN
+        ALTER TABLE public.signers ADD COLUMN assigned_user_id uuid REFERENCES public.registered_users(id);
+    END IF;
 END $$;
 
 -- 3.5. Update rams_documents for finalization
