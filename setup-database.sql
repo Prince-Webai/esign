@@ -52,6 +52,10 @@ CREATE POLICY "Allow all read" ON public.registered_users FOR SELECT USING (true
 DROP POLICY IF EXISTS "Allow all delete" ON public.registered_users;
 CREATE POLICY "Allow all delete" ON public.registered_users FOR DELETE USING (true);
 
+-- Allow all users to update (needed for the PIN change feature)
+DROP POLICY IF EXISTS "Allow all update" ON public.registered_users;
+CREATE POLICY "Allow all update" ON public.registered_users FOR UPDATE USING (true);
+
 -- 6. STORAGE POLICIES (Essential for PDF uploads)
 -- Create bucket if it doesn't exist
 INSERT INTO storage.buckets (id, name, public) 
