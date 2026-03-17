@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { FileText, Plus, Search, ChevronRight, Clock, FileUp, Copy, Check } from "lucide-react";
+import { FileText, Plus, Search, ChevronRight, Clock, FileUp, Copy, Check, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -41,6 +41,24 @@ export default function Dashboard() {
     navigator.clipboard.writeText(url);
     setCopiedId(token);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const deleteRams = async (id: string, name: string) => {
+    if (!confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) return;
+
+    try {
+      const { error } = await supabase
+        .from("rams_documents")
+        .delete()
+        .eq("id", id);
+      
+      if (error) throw error;
+      
+      setRams(prev => prev.filter(r => r.id !== id));
+    } catch (err) {
+      console.error("Delete failed:", err);
+      alert("Failed to delete RAMS document.");
+    }
   };
 
   return (
@@ -105,7 +123,6 @@ export default function Dashboard() {
               <tr className="border-b border-border/50 bg-secondary/30">
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">Document</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">Progress</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">Signers (Live Links)</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">Status</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">Actions</th>
               </tr>
@@ -140,31 +157,13 @@ export default function Dashboard() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex flex-wrap gap-2 max-w-xs">
-                      {doc.signers.map((s: any) => (
-                        <button
-                          key={s.id}
-                          onClick={() => copyLink(s.token)}
-                          className={cn(
-                            "group flex items-center gap-2 px-2 py-1 rounded-md border text-[10px] font-bold uppercase transition-all",
-                            s.status === 'signed' 
-                              ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-500" 
-                              : "bg-slate-800/50 border-slate-700/50 text-slate-400 hover:border-primary/50 hover:text-primary"
-                          )}
-                          title={`Copy signing link for ${s.name}`}
-                        >
-                          {copiedId === s.token ? <Check className="w-3 h-3" /> : (s.status === 'signed' ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />)}
-                          <span className="truncate max-w-[60px]">{s.name.split(' ')[0]}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
                     <span className={cn(
                       "inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
-                      doc.status === 'completed' ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/30" : "bg-amber-500/10 text-amber-500 border border-amber-500/30"
+                      doc.status === 'completed' || doc.signers.every((s:any) => s.status === 'signed') 
+                        ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/30" 
+                        : "bg-amber-500/10 text-amber-500 border border-amber-500/30"
                     )}>
-                      {doc.status}
+                      {doc.signers.every((s:any) => s.status === 'signed') ? 'ALL SIGNED' : 'PENDING'}
                     </span>
                   </td>
                   <td className="px-6 py-4">
@@ -185,6 +184,13 @@ export default function Dashboard() {
                           Download
                         </a>
                       )}
+                      <button 
+                        onClick={() => deleteRams(doc.id, doc.name)}
+                        className="p-2 text-slate-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all border border-transparent hover:border-red-500/20"
+                        title="Delete RAMS"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </td>
                 </tr>
