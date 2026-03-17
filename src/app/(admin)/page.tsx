@@ -43,8 +43,15 @@ export default function Dashboard() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const deleteRams = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) return;
+  const deleteRams = async (id: string, name: string, jobNumber: string) => {
+    const input = prompt(`To delete "${name}", please enter the Job Number (${jobNumber}):`);
+    
+    if (input === null) return; // User cancelled
+    
+    if (input !== jobNumber) {
+      alert("Job Number mismatch. Deletion cancelled.");
+      return;
+    }
 
     try {
       setLoading(true);
@@ -190,7 +197,7 @@ export default function Dashboard() {
                         )}
                       </div>
                       <button 
-                        onClick={() => deleteRams(doc.id, doc.name)}
+                        onClick={() => deleteRams(doc.id, doc.name, doc.servicem8_job_id)}
                         className="p-2 text-slate-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all border border-transparent hover:border-red-500/20"
                         title="Delete RAMS"
                       >
