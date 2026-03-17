@@ -211,6 +211,19 @@ export default function SigningPage({ token }: { token: string }) {
     );
   }
 
+  if (!signer || !document) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-[#020617]">
+        <X className="w-12 h-12 text-red-500" />
+        <h2 className="text-xl font-bold">Document Not Found</h2>
+        <p className="text-muted-foreground">This signing link is invalid or has expired.</p>
+        <Link href="/" className="mt-4 px-6 py-2 bg-primary text-primary-foreground rounded-lg">
+          Return to Dashboard
+        </Link>
+      </div>
+    );
+  }
+
   const currentRoleField = fields.find(f => f.role_name === signer.role_name);
 
   return (

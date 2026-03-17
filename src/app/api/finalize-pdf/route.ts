@@ -36,11 +36,15 @@ export async function POST(req: NextRequest) {
     if (fieldsError) throw fieldsError;
 
     // 3. Download original PDF
+    console.log(`Downloading PDF from path: "${rams.file_path}" in bucket: "rams"`);
     const { data: pdfBlob, error: downloadError } = await supabase.storage
       .from("rams")
       .download(rams.file_path);
 
-    if (downloadError) throw downloadError;
+    if (downloadError) {
+      console.error(`Supabase download error for path "${rams.file_path}":`, downloadError);
+      throw downloadError;
+    }
 
     const pdfBytes = await pdfBlob.arrayBuffer();
     const pdfDoc = await PDFDocument.load(pdfBytes);
@@ -114,6 +118,20 @@ export async function POST(req: NextRequest) {
     // 7. Notify Admin via Email
     await sendAdminNotification(rams.name);
 
+    // 8. Trigger Webhook (n8n)
+    try {
+      const base64Pdf = Buffer.from(finalizedPdfBytes).toString('base64');
+      await sendWebhookNotification({
+        job_number: rams.servicem8_job_id || "N/A",
+        document_name: rams.name,
+        pdf_base64: base64Pdf,
+        rams_id: ramsId
+      });
+    } catch (webhookErr) {
+      console.error("Webhook trigger failed:", webhookErr);
+      // Non-blocking error for the user
+    }
+
     return NextResponse.json({ 
       success: true, 
       finalPath: finalFileName 
@@ -122,6 +140,29 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error("Finalization error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+async function sendWebhookNotification(payload: any) {
+  const webhookUrl = "https://n8n.srv990376.hstgr.cloud/webhook/42fcae15-2efc-47af-9099-711ed47335fb";
+  
+  try {
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Webhook responded with status: ${response.status}`);
+    }
+    
+    console.log("Webhook triggered successfully.");
+  } catch (err) {
+    console.error("Failed to send webhook notification:", err);
+    throw err;
   }
 }
 

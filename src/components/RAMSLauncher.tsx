@@ -197,7 +197,7 @@ export function RAMSLauncher() {
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider">ServiceM8 Job ID</label>
+              <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Job Number</label>
               <input 
                 placeholder="e.g. TR-2045"
                 className="w-full bg-secondary border border-border/50 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none"

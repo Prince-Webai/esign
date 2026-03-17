@@ -91,3 +91,6 @@ CREATE POLICY "Enable all template access" ON public.rams_templates FOR ALL USIN
 -- 8. Signer Token Default (Insurance)
 ALTER TABLE public.signers ALTER COLUMN token SET DEFAULT encode(gen_random_bytes(32), 'hex');
 
+-- Backfill missing tokens for any existing rows
+UPDATE public.signers SET token = encode(gen_random_bytes(32), 'hex') WHERE token IS NULL;
+
