@@ -50,7 +50,6 @@ export function RAMSLauncher() {
   const [jobId, setJobId] = useState("");
   const [documentName, setDocumentName] = useState("");
   const [isUploading, setIsUploading] = useState(false);
-  const [isTemplateFile, setIsTemplateFile] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [numPages, setNumPages] = useState(0);
@@ -69,7 +68,7 @@ export function RAMSLauncher() {
 
   useEffect(() => {
     if (selectedTemplateId) {
-      async function fetchFieldsAndPdf() {
+      async function fetchFieldsOnly() {
         const { data } = await supabase
           .from("template_signature_fields")
           .select("*")
@@ -83,47 +82,14 @@ export function RAMSLauncher() {
             assigned_user_id: ""
           })));
         }
-
-        const template = templates.find(t => t.id === selectedTemplateId);
-        if (template?.preview_url) {
-          try {
-            console.log("Attempting to load template PDF:", template.preview_url);
-            
-            // Resilience: Try direct download, then try stripping bucket prefix if present
-            let path = template.preview_url;
-            if (path.includes('templates/')) {
-              path = path.split('templates/').pop() || path;
-            }
-
-            const { data: blob, error } = await supabase.storage
-              .from('templates')
-              .download(path);
-            
-            if (error) {
-              console.warn("Standard download failed, trying public URL fallback...", error);
-              const { data: { publicUrl } } = supabase.storage.from('templates').getPublicUrl(path);
-              const response = await fetch(publicUrl);
-              const fallbackBlob = await response.blob();
-              
-              const file = new File([fallbackBlob], `${template.name}.pdf`, { type: 'application/pdf' });
-              setFile(file);
-              setIsTemplateFile(true);
-              setDocumentName(template.name);
-            } else if (blob) {
-              const file = new File([blob], `${template.name}.pdf`, { type: 'application/pdf' });
-              setFile(file);
-              setIsTemplateFile(true);
-              setDocumentName(template.name);
-              console.log("Template PDF loaded successfully");
-            }
-          } catch (err) {
-            console.error("Error pre-loading template PDF:", err);
-          }
-        }
+        
+        // Force reset file when template changes so user MUST upload their fresh PDF
+        setFile(null);
+        setShowPreview(false);
       }
-      fetchFieldsAndPdf();
+      fetchFieldsOnly();
     }
-  }, [selectedTemplateId, templates]);
+  }, [selectedTemplateId]);
 
   const handleSignerUpdate = (index: number, updates: Partial<SignerInput>) => {
     setSigners(prev => {
@@ -222,23 +188,19 @@ export function RAMSLauncher() {
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
-                  {file ? (isTemplateFile ? "Template Default PDF" : "Custom Uploaded PDF") : "Upload Final RAMS PDF"}
+                  {file ? "Current RAMS PDF" : "Upload Prepared RAMS PDF (Required)"}
                 </label>
-                {isTemplateFile && (
-                  <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-black uppercase tracking-tighter">Auto-Loaded</span>
-                )}
               </div>
               {file && (
                 <div className="flex items-center gap-1">
                   <button 
                     onClick={() => {
                         setFile(null);
-                        setIsTemplateFile(false);
                         setShowPreview(false);
                     }}
                     className="flex items-center gap-1.5 text-[10px] font-bold text-amber-500 uppercase tracking-wider hover:bg-amber-500/5 px-2 py-1 rounded-lg transition-colors"
                   >
-                    <FileUp className="w-3 h-3" /> Replace PDF
+                    <FileUp className="w-3 h-3" /> Change PDF
                   </button>
                   <button 
                     onClick={() => setShowPreview(!showPreview)}
@@ -252,12 +214,11 @@ export function RAMSLauncher() {
             {!file ? (
               <label className="flex flex-col items-center justify-center h-48 border-2 border-dashed border-border/50 rounded-2xl cursor-pointer hover:bg-secondary/30 transition-all hover:border-primary/30 group">
                 <FileUp className="w-8 h-8 text-muted-foreground mb-3 group-hover:scale-110 transition-transform" />
-                <p className="font-semibold text-sm text-white">Drop PDF here or click to upload</p>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">Override template default with custom PDF</p>
+                <p className="font-semibold text-sm text-white">Drop your prepared PDF here or click to upload</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">Template signature fields will be applied to this file</p>
                 <input type="file" className="hidden" accept=".pdf" onChange={(e) => {
                     const selectedFile = e.target.files?.[0] || null;
                     setFile(selectedFile);
-                    setIsTemplateFile(false);
                 }} />
               </label>
             ) : (
