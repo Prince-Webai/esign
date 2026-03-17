@@ -79,25 +79,25 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-8 p-8 max-w-7xl mx-auto">
-      <div className="flex justify-between items-end">
+    <div className="space-y-8 p-4 md:p-8 max-w-7xl mx-auto">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-6">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight mb-2 text-white">Project Hub</h1>
-          <p className="text-muted-foreground">Manage your RAMS documents and track signatures in real-time.</p>
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-2 text-white">Project Hub</h1>
+          <p className="text-muted-foreground text-sm">Manage your RAMS documents and track signatures in real-time.</p>
         </div>
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-3">
           <Link 
             href="/templates/new"
-            className="flex items-center gap-2 px-6 py-3 rounded-xl border border-border/50 bg-secondary hover:bg-secondary/70 font-semibold transition-all"
+            className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl border border-border/50 bg-secondary hover:bg-secondary/70 font-semibold transition-all text-sm"
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-4 h-4" />
             Create Template
           </Link>
           <Link 
             href="/rams/new"
-            className="flex items-center gap-2 px-6 py-3 rounded-xl premium-gradient text-primary-foreground font-semibold shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform active:scale-95"
+            className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl premium-gradient text-primary-foreground font-semibold shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform active:scale-95 text-sm"
           >
-            <FileUp className="w-5 h-5" />
+            <FileUp className="w-4 h-4" />
             Launch RAMS
           </Link>
         </div>
@@ -123,25 +123,25 @@ export default function Dashboard() {
       </div>
 
       <div className="space-y-4">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <h2 className="text-2xl font-bold tracking-tight text-white">Recent RAMS</h2>
-          <div className="relative">
+          <div className="relative w-full sm:w-auto">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input 
               placeholder="Search RAMS..." 
-              className="bg-card border border-border/50 rounded-xl pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none w-64 uppercase font-bold tracking-widest"
+              className="bg-card border border-border/50 rounded-xl pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none w-full sm:w-64 uppercase font-bold tracking-widest"
             />
           </div>
         </div>
 
-        <div className="bg-card border border-border/50 rounded-2xl overflow-hidden shadow-xl">
-          <table className="w-full text-left">
+        <div className="bg-card border border-border/50 rounded-2xl overflow-hidden shadow-xl overflow-x-auto custom-scrollbar">
+          <table className="w-full text-left min-w-[800px]">
             <thead>
               <tr className="border-b border-border/50 bg-secondary/30">
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">Document</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">Progress</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">Status</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">Actions</th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50">
@@ -154,14 +154,14 @@ export default function Dashboard() {
                       <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
                         <FileText className="w-5 h-5" />
                       </div>
-                      <div>
-                        <p className="font-semibold text-sm text-white">{doc.name}</p>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-sm text-white truncate max-w-[200px]">{doc.name}</p>
                         <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Job #{doc.servicem8_job_id}</p>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="space-y-1.5 w-48">
+                    <div className="space-y-1.5 w-40 sm:w-48">
                       <div className="flex justify-between text-[10px] font-bold uppercase text-muted-foreground">
                         <span>{doc.signers.filter((s:any) => s.status === 'signed').length} / {doc.signers.length} Signed</span>
                       </div>
@@ -184,11 +184,11 @@ export default function Dashboard() {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex items-center justify-end gap-2 w-[240px]">
-                      <div className="flex flex-1 gap-2">
+                    <div className="flex items-center justify-end gap-2 pr-4">
+                      <div className="flex gap-2">
                         <Link 
                           href={`/rams/${doc.id}/view`}
-                          className="px-4 py-2 bg-secondary text-foreground text-xs font-bold rounded-lg border border-border/50 hover:bg-secondary/70 transition-all flex items-center gap-2"
+                          className="px-3 py-1.5 bg-secondary text-foreground text-[10px] font-bold rounded-lg border border-border/50 hover:bg-secondary/70 transition-all flex items-center gap-1.5"
                         >
                           View
                         </Link>
@@ -197,7 +197,7 @@ export default function Dashboard() {
                             href={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/rams/${doc.final_file_path}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="px-4 py-2 bg-emerald-500/10 text-emerald-500 text-xs font-bold rounded-lg border border-emerald-500/20 hover:bg-emerald-500/20 transition-all flex items-center gap-2"
+                            className="px-3 py-1.5 bg-emerald-500/10 text-emerald-500 text-[10px] font-bold rounded-lg border border-emerald-500/20 hover:bg-emerald-500/20 transition-all flex items-center gap-1.5"
                           >
                             Download
                           </a>
@@ -205,10 +205,10 @@ export default function Dashboard() {
                       </div>
                       <button 
                         onClick={() => deleteRams(doc.id, doc.name, doc.servicem8_job_id)}
-                        className="p-2 text-slate-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all border border-transparent hover:border-red-500/20"
+                        className="p-1.5 text-slate-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all border border-transparent hover:border-red-500/20"
                         title="Delete RAMS"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </td>

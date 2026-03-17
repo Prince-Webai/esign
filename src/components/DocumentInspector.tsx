@@ -3,20 +3,33 @@
 import { useState, useEffect, useRef } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { supabase } from "@/lib/supabase";
-import { Check, Loader2, Users, FileText, ChevronLeft, Download } from "lucide-react";
+import { Check, Loader2, Users, FileText, Download } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+// Use a stable version-specific worker URL to avoid resolution issues in production
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.mjs`;
 
 export function DocumentInspector({ ramsId }: { ramsId: string }) {
   const [loading, setLoading] = useState(true);
   const [document, setDocument] = useState<any>(null);
   const [allSigners, setAllSigners] = useState<any[]>([]);
   const [fields, setFields] = useState<any[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
   const [numPages, setNumPages] = useState(0);
+  const [containerWidth, setContainerWidth] = useState<number>(800);
   const containerRef = useRef<HTMLDivElement>(null);
+  const parentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!parentRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setContainerWidth(entry.contentRect.width);
+      }
+    });
+    observer.observe(parentRef.current);
+    return () => observer.disconnect();
+  }, [loading]);
 
   useEffect(() => {
     async function init() {
@@ -88,7 +101,7 @@ export function DocumentInspector({ ramsId }: { ramsId: string }) {
     <div className="flex flex-col lg:flex-row gap-8">
       {/* Sidebar: Details & Audit */}
       <div className="w-full lg:w-80 space-y-6">
-        <div className="bg-card border border-border/50 rounded-2xl p-6 shadow-sm">
+        <div className="bg-card border border-border/50 rounded-2xl p-6 shadow-sm sticky top-8">
            <div className="flex items-center gap-3 mb-6">
              <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
                <FileText className="w-6 h-6" />
@@ -138,55 +151,60 @@ export function DocumentInspector({ ramsId }: { ramsId: string }) {
       {/* Main View: PDF with live overlays */}
       <div className="flex-1 space-y-4">
         <div className="flex items-center justify-between border border-border/50 bg-secondary/20 p-4 rounded-2xl">
-           <div className="flex items-center gap-4 text-sm font-bold text-muted-foreground uppercase">
-              <span>Page {currentPage} of {numPages}</span>
-              <div className="flex gap-2">
-                 <button onClick={() => setCurrentPage(c => Math.max(1, c - 1))} className="hover:text-primary transition-colors disabled:opacity-30" disabled={currentPage <= 1}>Prev</button>
-                 <div className="w-px h-3 bg-border"></div>
-                 <button onClick={() => setCurrentPage(c => Math.min(numPages, c + 1))} className="hover:text-primary transition-colors disabled:opacity-30" disabled={currentPage >= numPages}>Next</button>
-              </div>
+           <div className="flex items-center gap-4 text-xs font-bold text-muted-foreground uppercase tracking-widest">
+              <span>{numPages} Pages Total</span>
+              <div className="w-px h-3 bg-border"></div>
+              <span className="text-primary">Scroll to View All</span>
            </div>
         </div>
 
-        <div className="relative border border-border/50 rounded-2xl overflow-hidden bg-white shadow-2xl flex justify-center">
-          <div ref={containerRef} className="relative">
-            <Document 
-              file={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/rams/${document.file_path}`} 
-              onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-            >
-              <Page 
-                pageNumber={currentPage} 
-                renderTextLayer={false} 
-                renderAnnotationLayer={false}
-                width={800}
-              />
-            </Document>
-
-            {fields.filter(f => f.page_number === currentPage).map((field) => {
-              const signerForField = allSigners.find(s => s.role_name === field.role_name);
-              if (!signerForField?.signature_data) return null;
-
+        <div ref={parentRef} className="relative border border-border/50 rounded-2xl overflow-hidden bg-slate-900/50 p-4 shadow-2xl flex flex-col items-center gap-6 overflow-y-auto max-h-[calc(100vh-200px)]">
+          <Document 
+            file={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/rams/${document.file_path}`} 
+            onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+            loading={<div className="p-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}
+            className="flex flex-col items-center gap-8"
+          >
+            {Array.from(new Array(numPages), (el, index) => {
+              const pageNum = index + 1;
               return (
-                <div
-                  key={field.role_name}
-                  style={{
-                    position: 'absolute',
-                    left: `${field.placement_x}%`,
-                    top: `${field.placement_y}%`,
-                    width: `${field.width}%`,
-                    height: `${field.height}%`,
-                    transform: 'translate(-50%, -50%)'
-                  }}
-                  className="animate-in fade-in zoom-in duration-500"
-                >
-                  <img src={signerForField.signature_data} className="w-full h-full object-contain mix-blend-multiply" />
-                  <div className="absolute -top-4 left-0 text-[8px] font-bold text-slate-500 hover:text-primary transition-colors cursor-default uppercase tracking-tighter whitespace-nowrap bg-white/80 px-1 rounded shadow-sm border border-slate-100">
-                    {signerForField.name} ({signerForField.role_name})
-                  </div>
+                <div key={`page_${pageNum}`} className="relative bg-white shadow-xl">
+                  <Page 
+                    pageNumber={pageNum} 
+                    renderTextLayer={false} 
+                    renderAnnotationLayer={false}
+                    width={Math.min(containerWidth - 64, 900)}
+                  />
+                  
+                  {/* Per-Page Signatures Overlay */}
+                  {fields.filter(f => f.page_number === pageNum).map((field) => {
+                    const signerForField = allSigners.find(s => s.role_name === field.role_name);
+                    if (!signerForField?.signature_data) return null;
+
+                    return (
+                      <div
+                        key={field.role_name}
+                        style={{
+                          position: 'absolute',
+                          left: `${field.placement_x}%`,
+                          top: `${field.placement_y}%`,
+                          width: `${field.width}%`,
+                          height: `${field.height}%`,
+                          transform: 'translate(-50%, -50%)'
+                        }}
+                        className="animate-in fade-in zoom-in duration-500"
+                      >
+                        <img 
+                          src={signerForField.signature_data} 
+                          className="w-full h-full object-contain mix-blend-multiply" 
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
               );
             })}
-          </div>
+          </Document>
         </div>
       </div>
     </div>
