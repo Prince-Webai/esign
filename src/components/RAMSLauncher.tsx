@@ -50,6 +50,7 @@ export function RAMSLauncher() {
   const [jobId, setJobId] = useState("");
   const [documentName, setDocumentName] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [isTemplateFile, setIsTemplateFile] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [numPages, setNumPages] = useState(0);
@@ -100,17 +101,18 @@ export function RAMSLauncher() {
             
             if (error) {
               console.warn("Standard download failed, trying public URL fallback...", error);
-              // Fallback: try to fetch via public URL if download fails (sometimes pathing is tricky)
               const { data: { publicUrl } } = supabase.storage.from('templates').getPublicUrl(path);
               const response = await fetch(publicUrl);
               const fallbackBlob = await response.blob();
               
               const file = new File([fallbackBlob], `${template.name}.pdf`, { type: 'application/pdf' });
               setFile(file);
+              setIsTemplateFile(true);
               setDocumentName(template.name);
             } else if (blob) {
               const file = new File([blob], `${template.name}.pdf`, { type: 'application/pdf' });
               setFile(file);
+              setIsTemplateFile(true);
               setDocumentName(template.name);
               console.log("Template PDF loaded successfully");
             }
@@ -218,24 +220,45 @@ export function RAMSLauncher() {
 
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
-                {file ? "Current RAMS PDF" : "Upload Final RAMS PDF (Optional if using Template Default)"}
-              </label>
+              <div className="flex items-center gap-2">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
+                  {file ? (isTemplateFile ? "Template Default PDF" : "Custom Uploaded PDF") : "Upload Final RAMS PDF"}
+                </label>
+                {isTemplateFile && (
+                  <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-black uppercase tracking-tighter">Auto-Loaded</span>
+                )}
+              </div>
               {file && (
-                <button 
-                  onClick={() => setShowPreview(!showPreview)}
-                  className="flex items-center gap-1.5 text-[10px] font-bold text-primary uppercase tracking-wider hover:bg-primary/5 px-2 py-1 rounded-lg transition-colors"
-                >
-                  {showPreview ? <><EyeOff className="w-3 h-3" /> Hide Preview</> : <><Eye className="w-3 h-3" /> View Preview</>}
-                </button>
+                <div className="flex items-center gap-1">
+                  <button 
+                    onClick={() => {
+                        setFile(null);
+                        setIsTemplateFile(false);
+                        setShowPreview(false);
+                    }}
+                    className="flex items-center gap-1.5 text-[10px] font-bold text-amber-500 uppercase tracking-wider hover:bg-amber-500/5 px-2 py-1 rounded-lg transition-colors"
+                  >
+                    <FileUp className="w-3 h-3" /> Replace PDF
+                  </button>
+                  <button 
+                    onClick={() => setShowPreview(!showPreview)}
+                    className="flex items-center gap-1.5 text-[10px] font-bold text-primary uppercase tracking-wider hover:bg-primary/5 px-2 py-1 rounded-lg transition-colors"
+                  >
+                    {showPreview ? <><EyeOff className="w-3 h-3" /> Hide Preview</> : <><Eye className="w-3 h-3" /> View Preview</>}
+                  </button>
+                </div>
               )}
             </div>
             {!file ? (
               <label className="flex flex-col items-center justify-center h-48 border-2 border-dashed border-border/50 rounded-2xl cursor-pointer hover:bg-secondary/30 transition-all hover:border-primary/30 group">
                 <FileUp className="w-8 h-8 text-muted-foreground mb-3 group-hover:scale-110 transition-transform" />
-                <p className="font-semibold text-sm">Drop PDF here or click to upload</p>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">Replaces template default</p>
-                <input type="file" className="hidden" accept=".pdf" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+                <p className="font-semibold text-sm text-white">Drop PDF here or click to upload</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">Override template default with custom PDF</p>
+                <input type="file" className="hidden" accept=".pdf" onChange={(e) => {
+                    const selectedFile = e.target.files?.[0] || null;
+                    setFile(selectedFile);
+                    setIsTemplateFile(false);
+                }} />
               </label>
             ) : (
               <div className="space-y-4">
