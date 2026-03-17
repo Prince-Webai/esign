@@ -35,18 +35,6 @@ export default function Dashboard() {
     fetchRAMS();
   }, []);
 
-  const finalizePdf = async (ramsId: string) => {
-    const res = await fetch("/api/finalize-pdf", {
-      method: "POST",
-      body: JSON.stringify({ ramsId }),
-    });
-    if (res.ok) {
-      alert("PDF Finalized successfully!");
-      window.location.reload();
-    } else {
-      alert("Error finalizing PDF");
-    }
-  };
 
   const copyLink = (token: string) => {
     const url = `${window.location.origin}/sign/${token}`;
@@ -187,14 +175,6 @@ export default function Dashboard() {
                       >
                         View
                       </Link>
-                      {doc.status !== 'completed' && (
-                        <button 
-                          onClick={() => finalizePdf(doc.id)}
-                          className="px-4 py-2 bg-primary text-primary-foreground text-xs font-bold rounded-lg hover:shadow-lg hover:shadow-primary/30 transition-all active:scale-95"
-                        >
-                          Finalize
-                        </button>
-                      )}
                       {doc.status === 'completed' && (
                         <a 
                           href={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/rams/${doc.final_file_path}`}
