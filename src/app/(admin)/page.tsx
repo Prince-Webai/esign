@@ -47,20 +47,25 @@ export default function Dashboard() {
     if (!confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) return;
 
     try {
-      // Manually delete signers first in case cascade is not set
-      await supabase.from("signers").delete().eq("rams_id", id);
+      setLoading(true);
+      // Manually delete signers first
+      const { error: signerError } = await supabase.from("signers").delete().eq("rams_id", id);
+      if (signerError) throw new Error(`Failed to delete signers: ${signerError.message}`);
       
-      const { error } = await supabase
+      const { error: docError } = await supabase
         .from("rams_documents")
         .delete()
         .eq("id", id);
       
-      if (error) throw error;
+      if (docError) throw new Error(`Failed to delete document: ${docError.message}`);
       
       setRams(prev => prev.filter(r => r.id !== id));
-    } catch (err) {
+      alert("Document deleted successfully.");
+    } catch (err: any) {
       console.error("Delete failed:", err);
-      alert("Failed to delete RAMS document.");
+      alert(err.message || "Failed to delete RAMS document.");
+    } finally {
+      setLoading(false);
     }
   };
 

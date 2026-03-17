@@ -82,6 +82,13 @@ CREATE POLICY "Enable all doc access" ON public.rams_documents FOR ALL USING (tr
 DROP POLICY IF EXISTS "Enable all signer access" ON public.signers;
 CREATE POLICY "Enable all signer access" ON public.signers FOR ALL USING (true) WITH CHECK (true);
 
+-- Explicitly allow deletion
+DROP POLICY IF EXISTS "Enable all doc delete" ON public.rams_documents;
+CREATE POLICY "Enable all doc delete" ON public.rams_documents FOR DELETE USING (true);
+
+DROP POLICY IF EXISTS "Enable all signer delete" ON public.signers;
+CREATE POLICY "Enable all signer delete" ON public.signers FOR DELETE USING (true);
+
 DROP POLICY IF EXISTS "Enable all field access" ON public.template_signature_fields;
 CREATE POLICY "Enable all field access" ON public.template_signature_fields FOR ALL USING (true) WITH CHECK (true);
 
