@@ -41,7 +41,7 @@ export default function SigningPage({ token }: { token: string }) {
   
   // Security State
   const [pin, setPin] = useState("");
-  const [isVerified, setIsVerified] = useState(true);
+  const [isVerified, setIsVerified] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [assignedUser, setAssignedUser] = useState<any>(null);
 
@@ -96,7 +96,7 @@ export default function SigningPage({ token }: { token: string }) {
         if (signersRes.data) setAllSigners(signersRes.data);
         if (fieldsRes.data) setFields(fieldsRes.data);
 
-        // 4. Secure check removed: User is already signed in to the portal
+        // 4. Identity Verification
         if (signerData.assigned_user_id) {
           const { data: userData } = await supabase
             .from("registered_users")
@@ -106,7 +106,12 @@ export default function SigningPage({ token }: { token: string }) {
           
           if (userData) {
             setAssignedUser(userData);
+            setIsVerified(false); // Force PIN verification
+          } else {
+            setIsVerified(true); // Fallback to open signing if user record missing
           }
+        } else {
+          setIsVerified(true); // Open signing for unassigned roles (e.g. Guest)
         }
 
         // 5. Set up Realtime listener inside the block where signerData is available
@@ -321,11 +326,6 @@ export default function SigningPage({ token }: { token: string }) {
                     className="animate-in fade-in zoom-in duration-500 group"
                   >
                     <img src={signerForField.signature_data} className="w-full h-full object-contain mix-blend-multiply" />
-                    <div className="absolute -top-5 left-0 right-0 text-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <span className="bg-black/80 backdrop-blur-md text-[8px] font-bold text-white px-2 py-0.5 rounded-full uppercase tracking-tighter">
-                        {signerForField.name}
-                      </span>
-                    </div>
                   </div>
                 );
               })}
