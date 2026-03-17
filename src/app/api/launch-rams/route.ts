@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
         .eq('rams_id', docData.id);
 
     if (createdSigners) {
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/$/, '');
       for (const s of createdSigners) {
         // We can just call the existing send-email logic or keep it simple here
         await fetch(`${baseUrl}/api/send-email`, {

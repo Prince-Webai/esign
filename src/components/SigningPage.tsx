@@ -8,7 +8,8 @@ import { Check, Edit3, X, Loader2, Users, FileText, ChevronLeft, ChevronRight, K
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+// Use a stable version-specific worker URL to avoid resolution issues in production
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.mjs`;
 
 interface Signer {
   id: string;
@@ -36,6 +37,7 @@ export default function SigningPage({ token }: { token: string }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [numPages, setNumPages] = useState(0);
   const [isSigning, setIsSigning] = useState(false);
+  const [errorStatus, setErrorStatus] = useState<string | null>(null);
   
   // Security State
   const [pin, setPin] = useState("");
@@ -71,7 +73,8 @@ export default function SigningPage({ token }: { token: string }) {
           .single();
 
         if (signerError || !signerData) {
-          console.error(signerError);
+          console.error("Signer fetch error:", signerError);
+          setErrorStatus(signerError?.message || "Invalid or expired signing link. Please check the URL and try again.");
           return;
         }
 
@@ -128,8 +131,9 @@ export default function SigningPage({ token }: { token: string }) {
         return () => {
           supabase.removeChannel(channel);
         };
-      } catch (err) {
-        console.error("Initialization error:", err);
+      } catch (err: any) {
+        console.error("CRITICAL: SigningPage Initialization error:", err);
+        setErrorStatus(err.message || "A technical error occurred while loading the secure signing session.");
       } finally {
         setLoading(false);
       }
@@ -211,13 +215,22 @@ export default function SigningPage({ token }: { token: string }) {
     );
   }
 
-  if (!signer || !document) {
+  if (errorStatus || !signer || !document) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-[#020617]">
-        <X className="w-12 h-12 text-red-500" />
-        <h2 className="text-xl font-bold">Document Not Found</h2>
-        <p className="text-muted-foreground">This signing link is invalid or has expired.</p>
-        <Link href="/" className="mt-4 px-6 py-2 bg-primary text-primary-foreground rounded-lg">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-[#020617] px-6 text-center">
+        <div className="p-4 bg-red-500/10 rounded-full ring-1 ring-red-500/20">
+          <X className="w-12 h-12 text-red-500" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-2xl font-bold text-white tracking-tight">{errorStatus ? "Security Session Error" : "Document Not Found"}</h2>
+          <p className="text-muted-foreground text-sm max-w-sm mx-auto">
+            {errorStatus || "This signing link is invalid, expired, or the document has been moved."}
+          </p>
+        </div>
+        <Link 
+          href="/" 
+          className="mt-2 px-8 py-3 bg-secondary text-foreground text-sm font-bold rounded-xl border border-border/50 hover:bg-secondary/80 transition-all"
+        >
           Return to Dashboard
         </Link>
       </div>

@@ -5,7 +5,7 @@ export async function POST(req: NextRequest) {
   try {
     const { email, name, documentName, token } = await req.json();
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/$/, '');
     const signingLink = `${baseUrl}/sign/${token}`;
 
     // ensure function is called
