@@ -7,8 +7,8 @@ import { Check, Loader2, Users, FileText, Download } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-// Use a stable version-specific worker URL to avoid resolution issues in production
-pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.mjs`;
+// Use the local worker (version 5.4.296) to match react-pdf and bypass CORS
+pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
 export function DocumentInspector({ ramsId }: { ramsId: string }) {
   const [loading, setLoading] = useState(true);

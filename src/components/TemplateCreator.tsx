@@ -8,8 +8,8 @@ import { Plus, Trash2, Save, FileUp, Loader2, X, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 
-// Set up worker for react-pdf
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+// Use the local worker (version 5.4.296) to match react-pdf and bypass CORS
+pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
 interface SignatureField {
   id: string;
