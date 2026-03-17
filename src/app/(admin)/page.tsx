@@ -48,22 +48,17 @@ export default function Dashboard() {
 
     try {
       setLoading(true);
-      // Manually delete signers first
-      const { error: signerError } = await supabase.from("signers").delete().eq("rams_id", id);
-      if (signerError) throw new Error(`Failed to delete signers: ${signerError.message}`);
       
-      const { error: docError } = await supabase
-        .from("rams_documents")
-        .delete()
-        .eq("id", id);
+      // Use the new atomic RPC for total reliability
+      const { error } = await supabase.rpc('delete_rams_document', { rams_uuid: id });
       
-      if (docError) throw new Error(`Failed to delete document: ${docError.message}`);
+      if (error) throw error;
       
       setRams(prev => prev.filter(r => r.id !== id));
       alert("Document deleted successfully.");
     } catch (err: any) {
       console.error("Delete failed:", err);
-      alert(err.message || "Failed to delete RAMS document.");
+      alert(err.message || "Failed to delete RAMS document. Please ensure the latest SQL script has been run in your Supabase dashboard.");
     } finally {
       setLoading(false);
     }

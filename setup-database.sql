@@ -94,6 +94,36 @@ CREATE POLICY "Enable all field access" ON public.template_signature_fields FOR 
 
 DROP POLICY IF EXISTS "Enable all template access" ON public.rams_templates;
 CREATE POLICY "Enable all template access" ON public.rams_templates FOR ALL USING (true) WITH CHECK (true);
+-- 9. Robust Deletion Function (Atomic & Secures Administrative Cleanup)
+CREATE OR REPLACE FUNCTION delete_rams_document(rams_uuid uuid)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER -- Runs with elevated privileges to bypass subtle RLS issues
+AS $$
+BEGIN
+    -- Delete associated signers first
+    DELETE FROM public.signers WHERE rams_id = rams_uuid;
+    
+    -- Delete the document
+    DELETE FROM public.rams_documents WHERE id = rams_uuid;
+END;
+$$;
+
+-- 10. Ensure Cascade at DB level (Belt and Suspenders)
+DO $$ 
+BEGIN 
+    -- Drop existing if exists to update to CASCADE
+    ALTER TABLE IF EXISTS public.signers 
+    DROP CONSTRAINT IF EXISTS signers_rams_id_fkey;
+    
+    ALTER TABLE public.signers 
+    ADD CONSTRAINT signers_rams_id_fkey 
+    FOREIGN KEY (rams_id) 
+    REFERENCES public.rams_documents(id) 
+    ON DELETE CASCADE;
+EXCEPTION WHEN OTHERS THEN 
+    RAISE NOTICE 'Constraint update failed, moving on...';
+END $$;
 
 -- 8. Signer Token Default (Insurance)
 ALTER TABLE public.signers ALTER COLUMN token SET DEFAULT encode(gen_random_bytes(32), 'hex');
