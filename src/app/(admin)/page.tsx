@@ -47,6 +47,9 @@ export default function Dashboard() {
     if (!confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) return;
 
     try {
+      // Manually delete signers first in case cascade is not set
+      await supabase.from("signers").delete().eq("rams_id", id);
+      
       const { error } = await supabase
         .from("rams_documents")
         .delete()
@@ -167,23 +170,25 @@ export default function Dashboard() {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex gap-2">
-                      <Link 
-                        href={`/rams/${doc.id}/view`}
-                        className="px-4 py-2 bg-secondary text-foreground text-xs font-bold rounded-lg border border-border/50 hover:bg-secondary/70 transition-all flex items-center gap-2"
-                      >
-                        View
-                      </Link>
-                      {doc.status === 'completed' && (
-                        <a 
-                          href={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/rams/${doc.final_file_path}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="px-4 py-2 bg-emerald-500/10 text-emerald-500 text-xs font-bold rounded-lg border border-emerald-500/20 hover:bg-emerald-500/20 transition-all flex items-center gap-2"
+                    <div className="flex items-center justify-end gap-2 w-[240px]">
+                      <div className="flex flex-1 gap-2">
+                        <Link 
+                          href={`/rams/${doc.id}/view`}
+                          className="px-4 py-2 bg-secondary text-foreground text-xs font-bold rounded-lg border border-border/50 hover:bg-secondary/70 transition-all flex items-center gap-2"
                         >
-                          Download
-                        </a>
-                      )}
+                          View
+                        </Link>
+                        {doc.status === 'completed' && (
+                          <a 
+                            href={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/rams/${doc.final_file_path}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="px-4 py-2 bg-emerald-500/10 text-emerald-500 text-xs font-bold rounded-lg border border-emerald-500/20 hover:bg-emerald-500/20 transition-all flex items-center gap-2"
+                          >
+                            Download
+                          </a>
+                        )}
+                      </div>
                       <button 
                         onClick={() => deleteRams(doc.id, doc.name)}
                         className="p-2 text-slate-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all border border-transparent hover:border-red-500/20"
