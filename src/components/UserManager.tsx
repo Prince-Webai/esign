@@ -84,6 +84,21 @@ export function UserManager() {
     else alert("Failed to delete: " + error.message);
   }
 
+  async function handleUpdatePIN(id: string, pin: string) {
+    const { error } = await supabase
+      .from("registered_users")
+      .update({ password_hash: pin })
+      .eq("id", id);
+    
+    if (!error) {
+      fetchUsers();
+      return true;
+    } else {
+      alert("Update failed: " + error.message);
+      return false;
+    }
+  }
+
   const admins = users.filter(u => u.role === 'admin');
   const signers = users.filter(u => u.role !== 'admin');
 
@@ -167,7 +182,7 @@ export function UserManager() {
             ) : (
               <div className="divide-y divide-white/5">
                 {admins.map(user => (
-                  <UserRow key={user.id} user={user} onDelete={handleDeleteUser} />
+                  <UserRow key={user.id} user={user} onDelete={handleDeleteUser} onUpdatePIN={handleUpdatePIN} />
                 ))}
               </div>
             )}
@@ -186,7 +201,7 @@ export function UserManager() {
               ) : (
                 <div className="divide-y divide-white/5">
                   {signers.map(user => (
-                    <UserRow key={user.id} user={user} onDelete={handleDeleteUser} />
+                    <UserRow key={user.id} user={user} onDelete={handleDeleteUser} onUpdatePIN={handleUpdatePIN} />
                   ))}
                 </div>
               )}
@@ -197,9 +212,20 @@ export function UserManager() {
   );
 }
 
-function UserRow({ user, onDelete }: { user: RegisteredUser, onDelete: (id: string) => void }) {
+function UserRow({ 
+  user, 
+  onDelete,
+  onUpdatePIN 
+}: { 
+  user: RegisteredUser, 
+  onDelete: (id: string) => void,
+  onUpdatePIN: (id: string, pin: string) => Promise<boolean>
+}) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isEditingPIN, setIsEditingPIN] = useState(false);
+  const [newPIN, setNewPIN] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const performDelete = async () => {
     setIsDeleting(true);
@@ -208,52 +234,113 @@ function UserRow({ user, onDelete }: { user: RegisteredUser, onDelete: (id: stri
     setConfirmDelete(false);
   };
 
+  const performUpdatePIN = async () => {
+    if (newPIN.length < 4) {
+      alert("PIN must be 4 digits");
+      return;
+    }
+    setIsUpdating(true);
+    const success = await onUpdatePIN(user.id, newPIN);
+    if (success) {
+      setIsEditingPIN(false);
+      setNewPIN("");
+    }
+    setIsUpdating(false);
+  };
+
   return (
-    <div className="group flex items-center justify-between p-6 hover:bg-white/[0.03] transition-all">
-      <div className="flex items-center gap-4">
-        <div className={cn(
-          "w-12 h-12 rounded-2xl flex items-center justify-center text-[11px] font-black shadow-lg transition-transform group-hover:scale-110",
-          user.role === 'admin' ? "bg-amber-500/10 text-amber-500 shadow-amber-500/5 border border-amber-500/10" : "bg-primary/10 text-primary shadow-primary/5 border border-primary/10"
-        )}>
-          {user.name.charAt(0)}
+    <div className="group flex flex-col hover:bg-white/[0.03] transition-all divide-y divide-white/5">
+      <div className="flex items-center justify-between p-6">
+        <div className="flex items-center gap-4">
+          <div className={cn(
+            "w-12 h-12 rounded-2xl flex items-center justify-center text-[11px] font-black shadow-lg transition-transform group-hover:scale-110",
+            user.role === 'admin' ? "bg-amber-500/10 text-amber-500 shadow-amber-500/5 border border-amber-500/10" : "bg-primary/10 text-primary shadow-primary/5 border border-primary/10"
+          )}>
+            {user.name.charAt(0)}
+          </div>
+          <div className="space-y-0.5">
+            <p className="font-bold text-white text-base leading-tight">{user.name}</p>
+            <div className="flex items-center gap-2 text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                {user.email}
+            </div>
+          </div>
         </div>
-        <div className="space-y-0.5">
-           <p className="font-bold text-white text-base leading-tight">{user.name}</p>
-           <div className="flex items-center gap-2 text-[10px] text-slate-500 font-bold uppercase tracking-wider">
-              {user.email}
+        
+        <div className="flex items-center gap-2">
+          {!confirmDelete && !isEditingPIN && (
+            <button 
+              onClick={() => setIsEditingPIN(true)}
+              className="p-3 text-slate-700 hover:text-amber-500 hover:bg-amber-500/10 rounded-2xl transition-all"
+              title="Change PIN"
+            >
+              <Key className="w-5 h-5" />
+            </button>
+          )}
+
+          {confirmDelete ? (
+            <div className="flex items-center gap-1 bg-slate-950 border border-white/5 rounded-xl p-1 animate-in fade-in zoom-in duration-200">
+              <button 
+                onClick={performDelete}
+                disabled={isDeleting}
+                className="p-2 text-emerald-400 hover:bg-emerald-400/10 rounded-lg transition-all"
+                title="Confirm Removal"
+              >
+                {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+              </button>
+              <button 
+                onClick={() => setConfirmDelete(false)}
+                className="p-2 text-slate-500 hover:bg-white/5 rounded-lg transition-all"
+                title="Cancel"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ) : !isEditingPIN ? (
+            <button 
+              onClick={() => setConfirmDelete(true)}
+              className="p-3 text-slate-700 hover:text-red-500 hover:bg-red-500/10 rounded-2xl transition-all"
+              title="Remove User"
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
+          ) : null}
+        </div>
+      </div>
+
+      {isEditingPIN && (
+        <div className="px-6 py-4 bg-slate-950/20 animate-in slide-in-from-top-2 duration-300">
+           <div className="flex items-center gap-4">
+              <div className="flex-1 max-w-[200px]">
+                <div className="relative">
+                  <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-amber-500" />
+                  <input 
+                    type="password"
+                    maxLength={4}
+                    value={newPIN}
+                    onChange={(e) => setNewPIN(e.target.value)}
+                    placeholder="New 4-digit PIN"
+                    className="w-full bg-slate-950 border border-white/5 rounded-xl pl-10 pr-4 py-2 text-xs focus:ring-2 focus:ring-amber-500/20 outline-none transition-all placeholder:text-slate-800"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={performUpdatePIN}
+                  disabled={isUpdating || newPIN.length < 4}
+                  className="px-4 py-2 bg-amber-500/10 text-amber-500 text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-amber-500/20 transition-all disabled:opacity-30"
+                >
+                  {isUpdating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Update PIN"}
+                </button>
+                <button 
+                  onClick={() => setIsEditingPIN(false)}
+                  className="p-2 text-slate-500 hover:bg-white/5 rounded-lg transition-all"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
            </div>
         </div>
-      </div>
-      
-      <div className="flex items-center gap-2">
-        {confirmDelete ? (
-          <div className="flex items-center gap-1 bg-slate-950 border border-white/5 rounded-xl p-1 animate-in fade-in zoom-in duration-200">
-             <button 
-               onClick={performDelete}
-               disabled={isDeleting}
-               className="p-2 text-emerald-400 hover:bg-emerald-400/10 rounded-lg transition-all"
-               title="Confirm Removal"
-             >
-               {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-             </button>
-             <button 
-               onClick={() => setConfirmDelete(false)}
-               className="p-2 text-slate-500 hover:bg-white/5 rounded-lg transition-all"
-               title="Cancel"
-             >
-               <X className="w-4 h-4" />
-             </button>
-          </div>
-        ) : (
-          <button 
-            onClick={() => setConfirmDelete(true)}
-            className="p-3 text-slate-700 hover:text-red-500 hover:bg-red-500/10 rounded-2xl transition-all"
-            title="Remove User"
-          >
-            <Trash2 className="w-5 h-5" />
-          </button>
-        )}
-      </div>
+      )}
     </div>
   );
 }
