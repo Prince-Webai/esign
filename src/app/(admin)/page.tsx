@@ -11,6 +11,12 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
+  // Custom Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState<{ id: string; name: string; jobNumber: string } | null>(null);
+  const [deleteInput, setDeleteInput] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+
   useEffect(() => {
     async function fetchRAMS() {
       // Session Protection
@@ -43,31 +49,32 @@ export default function Dashboard() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const deleteRams = async (id: string, name: string, jobNumber: string) => {
-    const input = prompt(`To delete "${name}", please enter the Job Number (${jobNumber}):`);
-    
-    if (input === null) return; // User cancelled
-    
-    if (input !== jobNumber) {
-      alert("Job Number mismatch. Deletion cancelled.");
-      return;
-    }
+  const deleteRams = (id: string, name: string, jobNumber: string) => {
+    setDocumentToDelete({ id, name, jobNumber });
+    setDeleteInput("");
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleFinalDelete = async () => {
+    if (!documentToDelete || deleteInput !== documentToDelete.jobNumber) return;
 
     try {
-      setLoading(true);
+      setIsDeleting(true);
       
       // Use the new atomic RPC for total reliability
-      const { error } = await supabase.rpc('delete_rams_document', { rams_uuid: id });
+      const { error } = await supabase.rpc('delete_rams_document', { rams_uuid: documentToDelete.id });
       
       if (error) throw error;
       
-      setRams(prev => prev.filter(r => r.id !== id));
+      setRams(prev => prev.filter(r => r.id !== documentToDelete.id));
+      setIsDeleteModalOpen(false);
+      setDocumentToDelete(null);
       alert("Document deleted successfully.");
     } catch (err: any) {
       console.error("Delete failed:", err);
-      alert(err.message || "Failed to delete RAMS document. Please ensure the latest SQL script has been run in your Supabase dashboard.");
+      alert(err.message || "Failed to delete RAMS document.");
     } finally {
-      setLoading(false);
+      setIsDeleting(false);
     }
   };
 
@@ -211,6 +218,61 @@ export default function Dashboard() {
           </table>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && documentToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-secondary/50 border border-border/50 rounded-2xl w-full max-w-md p-8 shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="flex flex-col items-center text-center gap-4">
+              <div className="p-4 bg-red-500/10 rounded-full">
+                <Trash2 className="w-8 h-8 text-red-500" />
+              </div>
+              
+              <div className="space-y-2">
+                <h3 className="text-xl font-bold">Delete Document?</h3>
+                <p className="text-sm text-muted-foreground">
+                  This action is permanent and will delete <strong>{documentToDelete.name}</strong> along with all signatures.
+                </p>
+              </div>
+
+              <div className="w-full space-y-4 mt-4">
+                <div className="space-y-2 text-left">
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Type Job Number to Confirm: <span className="text-foreground">{documentToDelete.jobNumber}</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={deleteInput}
+                    onChange={(e) => setDeleteInput(e.target.value)}
+                    placeholder="Enter Job Number..."
+                    className="w-full bg-secondary/50 border border-border/50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500/50 transition-all font-mono"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <button
+                    onClick={() => {
+                      setIsDeleteModalOpen(false);
+                      setDocumentToDelete(null);
+                    }}
+                    disabled={isDeleting}
+                    className="w-full px-4 py-3 bg-secondary text-foreground text-sm font-bold rounded-xl border border-border/50 hover:bg-secondary/80 transition-all disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleFinalDelete}
+                    disabled={isDeleting || deleteInput !== documentToDelete.jobNumber}
+                    className="w-full px-4 py-3 bg-red-500 text-white text-sm font-bold rounded-xl shadow-lg shadow-red-500/20 hover:bg-red-600 transition-all disabled:opacity-50 disabled:grayscale"
+                  >
+                    {isDeleting ? "Deleting..." : "Confirm Delete"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
