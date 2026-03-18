@@ -59,7 +59,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-6 relative overflow-hidden text-slate-100">
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 relative overflow-hidden text-slate-900">
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[120px]" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/10 rounded-full blur-[120px]" />
 
@@ -68,11 +68,11 @@ export default function LoginPage() {
           <div className="inline-flex w-16 h-16 rounded-2xl premium-gradient items-center justify-center font-bold text-2xl text-white shadow-2xl shadow-primary/20 mb-2">
             TRE
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-white">RAMS Connect</h1>
-          <p className="text-slate-400 font-medium italic">Secure Identity-Based Signature Portal</p>
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">RAMS Connect</h1>
+          <p className="text-slate-500 font-medium italic">Secure Identity-Based Signature Portal</p>
         </div>
 
-        <div className="bg-slate-900/40 backdrop-blur-2xl border border-white/5 p-8 rounded-3xl shadow-2xl space-y-6">
+        <div className="bg-white border border-slate-200 p-8 rounded-3xl shadow-sm space-y-6">
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2 text-left">
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Identity (Email)</label>
@@ -83,7 +83,7 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-slate-950 border border-white/5 rounded-2xl px-12 py-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-slate-800"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-12 py-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-slate-400 text-slate-900"
                   placeholder="name@example.com"
                 />
               </div>
@@ -98,7 +98,7 @@ export default function LoginPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-slate-950 border border-white/5 rounded-2xl px-12 py-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-slate-800"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-12 py-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-slate-400 text-slate-900"
                   placeholder="••••"
                 />
               </div>

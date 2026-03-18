@@ -77,20 +77,20 @@ export function SignerDashboard({ userEmail }: { userEmail: string }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#020617] text-slate-100 p-6 md:p-12">
+    <div className="min-h-screen bg-slate-50 text-slate-900 p-6 md:p-12">
       <div className="max-w-5xl mx-auto space-y-12">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-white/5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-slate-200">
           <div className="space-y-2">
-            <h1 className="text-4xl font-bold tracking-tight text-white">
+            <h1 className="text-4xl font-bold tracking-tight text-slate-900">
               Welcome back, <span className="text-primary">{userName.split(' ')[0]}</span>
             </h1>
-            <p className="text-slate-400 font-medium">You have <span className="text-white font-bold">{documents.filter(d => d.status === 'pending').length} pending</span> documents to sign.</p>
+            <p className="text-slate-500 font-medium">You have <span className="text-slate-900 font-bold">{documents.filter(d => d.status === 'pending').length} pending</span> documents to sign.</p>
           </div>
           
           <button 
             onClick={handleLogout}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all border border-white/5"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-500 hover:text-slate-900 transition-all border border-slate-200 shadow-sm"
           >
             <LogOut className="w-4 h-4" />
             <span className="text-sm font-bold uppercase tracking-widest">Logout</span>
@@ -99,32 +99,32 @@ export function SignerDashboard({ userEmail }: { userEmail: string }) {
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-slate-900/40 backdrop-blur-md p-6 rounded-2xl border border-white/5 shadow-xl">
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
              <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-4">
                 <FileText className="w-5 h-5" />
              </div>
              <p className="text-3xl font-bold">{documents.length}</p>
              <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Total Assignments</p>
           </div>
-          <div className="bg-slate-900/40 backdrop-blur-md p-6 rounded-2xl border border-amber-500/10 shadow-xl shadow-amber-500/5">
+          <div className="bg-white p-6 rounded-2xl border border-amber-500/20 shadow-sm shadow-amber-500/5">
              <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center mb-4">
                 <Clock className="w-5 h-5" />
              </div>
-             <p className="text-3xl font-bold text-amber-400">{documents.filter(d => d.status === 'pending').length}</p>
+             <p className="text-3xl font-bold text-amber-500">{documents.filter(d => d.status === 'pending').length}</p>
              <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Pending Actions</p>
           </div>
-          <div className="bg-slate-900/40 backdrop-blur-md p-6 rounded-2xl border border-emerald-500/10 shadow-xl shadow-emerald-500/5">
+          <div className="bg-white p-6 rounded-2xl border border-emerald-500/20 shadow-sm shadow-emerald-500/5">
              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center mb-4">
                 <Check className="w-5 h-5" />
              </div>
-             <p className="text-3xl font-bold text-emerald-400">{documents.filter(d => d.status === 'signed').length}</p>
+             <p className="text-3xl font-bold text-emerald-500">{documents.filter(d => d.status === 'signed').length}</p>
              <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Completed Items</p>
           </div>
         </div>
 
         {/* Document List */}
         <div className="space-y-6">
-          <h2 className="text-xl font-bold flex items-center gap-2">
+          <h2 className="text-xl font-bold flex items-center gap-2 text-slate-900">
             <FileText className="w-5 h-5 text-primary" />
             Active RAMS Documents
           </h2>
@@ -136,26 +136,26 @@ export function SignerDashboard({ userEmail }: { userEmail: string }) {
                 <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Synchronizing documents...</p>
               </div>
             ) : documents.length === 0 ? (
-              <div className="py-20 border-2 border-dashed border-white/5 rounded-3xl flex flex-col items-center justify-center text-center">
+              <div className="py-20 border-2 border-dashed border-slate-200 bg-white shadow-sm rounded-3xl flex flex-col items-center justify-center text-center">
                 <p className="text-slate-500 italic">No RAMS documents have been assigned to you yet.</p>
               </div>
             ) : (
               documents.map((doc) => (
                 <div 
                   key={doc.id}
-                  className="group bg-slate-900/40 hover:bg-slate-900/60 transition-all border border-white/5 rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-xl"
+                  className="group bg-white hover:bg-slate-50 transition-all border border-slate-200 rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm"
                 >
                   <div className="flex items-center gap-4">
                     <div className={cn(
-                      "w-12 h-12 rounded-xl flex items-center justify-center text-slate-950 shadow-lg",
+                      "w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-lg",
                       doc.status === 'signed' ? "bg-emerald-500 shadow-emerald-500/20" : "bg-amber-500 shadow-amber-500/20"
                     )}>
                       {doc.status === 'signed' ? <Check className="w-6 h-6" /> : <Clock className="w-6 h-6" />}
                     </div>
                     <div>
-                      <h3 className="font-bold text-lg group-hover:text-primary transition-colors">{doc.rams_documents.name}</h3>
+                      <h3 className="font-bold text-lg text-slate-900 group-hover:text-primary transition-colors">{doc.rams_documents.name}</h3>
                       <div className="flex items-center gap-3 mt-1">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded-md">
+                        <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded-md">
                           {doc.role_name}
                         </span>
                         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
@@ -186,7 +186,7 @@ export function SignerDashboard({ userEmail }: { userEmail: string }) {
                       <div className="flex items-center gap-2">
                         <Link 
                           href={`/sign/${doc.token}`}
-                          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-white/5 text-slate-400 font-bold hover:bg-white/10 transition-all"
+                          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition-all"
                         >
                           View Record
                           <ChevronRight className="w-4 h-4" />
