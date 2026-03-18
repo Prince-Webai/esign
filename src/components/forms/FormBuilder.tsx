@@ -42,7 +42,7 @@ function SortableField({ field, onDelete, onUpdate, onSelect, onSelectNull, isSe
           <div className="pointer-events-none w-full">
              <div className="space-y-1 w-full mb-4">
                {isSelected && <span className="text-[10px] font-black uppercase tracking-widest text-[#FA890F] bg-orange-50 border border-orange-100 px-3 py-1 rounded-lg mb-2 inline-block">Editing {field.type}</span>}
-               <h4 className="text-[17px] font-bold text-slate-800 leading-tight">{field.label || "Untitled Field"}{field.required && <span className="text-red-500 ml-1.5">*</span>}</h4>
+               {field.type !== 'header' && <h4 className="text-[17px] font-bold text-slate-800 leading-tight">{field.label || "Untitled Field"}{field.required && <span className="text-red-500 ml-1.5">*</span>}</h4>}
              </div>
              {field.type === 'input' && <div className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-400 shadow-inner">{field.placeholder || "Text input placeholder"}</div>}
              {field.type === 'textarea' && <div className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-400 h-24 shadow-inner">{field.placeholder || "Long text placeholder"}</div>}
