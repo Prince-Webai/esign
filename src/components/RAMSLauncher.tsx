@@ -215,7 +215,7 @@ export function RAMSLauncher() {
             {!file ? (
               <label className="flex flex-col items-center justify-center h-48 border-2 border-dashed border-border/50 rounded-2xl cursor-pointer hover:bg-secondary/30 transition-all hover:border-primary/30 group">
                 <FileUp className="w-8 h-8 text-muted-foreground mb-3 group-hover:scale-110 transition-transform" />
-                <p className="font-semibold text-sm text-white">Drop your prepared PDF here or click to upload</p>
+                <p className="font-semibold text-sm text-slate-900">Drop your prepared PDF here or click to upload</p>
                 <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">Template signature fields will be applied to this file</p>
                 <input type="file" className="hidden" accept=".pdf" onChange={(e) => {
                     const selectedFile = e.target.files?.[0] || null;
@@ -230,7 +230,7 @@ export function RAMSLauncher() {
                       <FileUp className="w-5 h-5" />
                     </div>
                     <div className="min-w-0">
-                      <p className="font-bold text-sm truncate text-white">{file.name}</p>
+                      <p className="font-bold text-sm truncate text-slate-900">{file.name}</p>
                       <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                     </div>
                   </div>
@@ -376,7 +376,7 @@ export function RAMSLauncher() {
                       <label className="text-[9px] font-bold text-slate-600 uppercase tracking-widest pl-1">Full Name</label>
                       <input 
                         placeholder="John Doe"
-                        className="w-full bg-slate-950/50 border border-white/5 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-slate-800"
+                        className="w-full bg-secondary border border-border/50 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-slate-400 text-slate-900"
                         value={signer.name}
                         onChange={(e) => handleSignerUpdate(index, { name: e.target.value })}
                       />
@@ -386,7 +386,7 @@ export function RAMSLauncher() {
                       <input 
                         placeholder="john@example.com"
                         type="email"
-                        className="w-full bg-slate-950/50 border border-white/5 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-slate-800"
+                        className="w-full bg-secondary border border-border/50 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-slate-400 text-slate-900"
                         value={signer.email}
                         onChange={(e) => handleSignerUpdate(index, { email: e.target.value })}
                       />
@@ -396,11 +396,11 @@ export function RAMSLauncher() {
                   <div className="md:col-span-3 flex items-center gap-6 py-2 px-4 bg-primary/5 border border-primary/10 rounded-2xl animate-in fade-in slide-in-from-left-2 duration-300">
                      <div className="flex-1">
                         <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Assigned Name</p>
-                        <p className="text-sm font-bold text-white">{signer.name}</p>
+                        <p className="text-sm font-bold text-slate-900">{signer.name}</p>
                      </div>
                      <div className="flex-1">
                         <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Assigned Email</p>
-                        <p className="text-sm font-bold text-slate-300 italic">{signer.email}</p>
+                        <p className="text-sm font-bold text-slate-600 italic">{signer.email}</p>
                      </div>
                   </div>
                 )}
@@ -412,16 +412,16 @@ export function RAMSLauncher() {
 
       <div className="space-y-6">
         <div className="bg-card border border-border/50 rounded-2xl p-6 shadow-sm sticky top-8">
-          <h3 className="font-bold text-lg mb-6 tracking-tight text-white">Summary</h3>
+          <h3 className="font-bold text-lg mb-6 tracking-tight text-slate-900">Summary</h3>
           
           <div className="space-y-4 mb-8">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Template</span>
-              <span className="font-medium text-white">{templates.find(t => t.id === selectedTemplateId)?.name || "-"}</span>
+              <span className="font-medium text-slate-900">{templates.find(t => t.id === selectedTemplateId)?.name || "-"}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Signers</span>
-              <span className="font-medium text-white">{signers.filter(s => s.name && s.email).length} / {signers.length}</span>
+              <span className="font-medium text-slate-900">{signers.filter(s => s.name && s.email).length} / {signers.length}</span>
             </div>
           </div>
 
