@@ -9,7 +9,7 @@ export default function PublicFormPage() {
   const id = params.id as string;
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-[#F8FAFC]">
       <FormRenderer formId={id} />
     </div>
   );

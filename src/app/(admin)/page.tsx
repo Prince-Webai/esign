@@ -79,23 +79,23 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-8 p-4 md:p-8 max-w-7xl mx-auto">
-      <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-6">
+    <div className="space-y-12 p-4 md:p-8 max-w-7xl mx-auto animate-in fade-in slide-in-from-top-4 duration-700">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-8 bg-white p-10 rounded-[40px] border border-slate-200 shadow-xl shadow-slate-900/5">
         <div>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-2 text-white">Project Hub</h1>
-          <p className="text-muted-foreground text-sm">Manage your RAMS documents and track signatures in real-time.</p>
+          <h1 className="text-4xl font-black tracking-tight mb-2 text-slate-900">Project Hub</h1>
+          <p className="text-slate-500 font-medium text-lg">Manage your RAMS documents and track signatures in real-time.</p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col sm:flex-row gap-4">
           <Link 
             href="/templates/new"
-            className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl border border-border/50 bg-secondary hover:bg-secondary/70 font-semibold transition-all text-sm"
+            className="flex items-center justify-center gap-3 px-8 py-4 rounded-2xl border border-slate-200 bg-slate-50 hover:bg-slate-100 font-black transition-all text-[11px] uppercase tracking-widest text-slate-600 shadow-sm"
           >
             <Plus className="w-4 h-4" />
             Create Template
           </Link>
           <Link 
             href="/rams/new"
-            className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl premium-gradient text-primary-foreground font-semibold shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform active:scale-95 text-sm"
+            className="flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-emerald-600 text-white font-black shadow-xl shadow-emerald-500/20 hover:bg-emerald-700 hover:scale-[1.03] transition-all active:scale-95 text-[11px] uppercase tracking-widest"
           >
             <FileUp className="w-4 h-4" />
             Launch RAMS
@@ -103,92 +103,95 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {[
-          { label: "Active RAMS", value: rams.filter(r => r.status !== 'completed').length.toString(), icon: FileText, color: "text-emerald-500" },
-          { label: "Pending Signatures", value: rams.reduce((acc, r) => acc + r.signers.filter((s: any) => s.status === 'pending').length, 0).toString(), icon: Clock, color: "text-amber-500" },
-          { label: "Completed Documents", value: rams.filter(r => r.status === 'completed').length.toString(), icon: FileText, color: "text-blue-500" },
+          { label: "Active RAMS", value: rams.filter(r => r.status !== 'completed').length.toString(), icon: FileText, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-100" },
+          { label: "Pending Signatures", value: rams.reduce((acc, r) => acc + r.signers.filter((s: any) => s.status === 'pending').length, 0).toString(), icon: Clock, color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-100" },
+          { label: "Completed Items", value: rams.filter(r => r.status === 'completed').length.toString(), icon: Check, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100" },
         ].map((stat) => (
-          <div key={stat.label} className="p-6 rounded-2xl bg-card border border-border/50 shadow-sm transition-all hover:border-primary/20">
-            <div className="flex justify-between items-start mb-4">
-              <div className={cn("p-3 rounded-xl bg-secondary", stat.color)}>
+          <div key={stat.label} className="p-8 rounded-[32px] bg-white border border-slate-200 shadow-sm transition-all hover:shadow-xl hover:shadow-slate-900/5 group">
+            <div className="flex justify-between items-start mb-6">
+              <div className={cn("p-4 rounded-2xl transition-transform group-hover:scale-110 duration-300 border", stat.bg, stat.color, stat.border)}>
                 <stat.icon className="w-6 h-6" />
               </div>
-              <span className="text-xs font-bold text-muted-foreground bg-secondary px-2 py-1 rounded-md uppercase tracking-wider">Live</span>
+              <span className="text-[10px] font-black text-slate-400 bg-slate-50 px-3 py-1.5 rounded-full uppercase tracking-widest border border-slate-100">Live Status</span>
             </div>
-            <p className="text-3xl font-bold mb-1 text-white">{stat.value}</p>
-            <p className="text-sm text-muted-foreground">{stat.label}</p>
+            <p className="text-4xl font-black mb-1 text-slate-900 tracking-tight">{stat.value}</p>
+            <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">{stat.label}</p>
           </div>
         ))}
       </div>
 
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-          <h2 className="text-2xl font-bold tracking-tight text-white">Recent RAMS</h2>
-          <div className="relative w-full sm:w-auto">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-6 px-4">
+          <h2 className="text-2xl font-black tracking-tight text-slate-900 flex items-center gap-3">
+             <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.4)]" />
+             Recent RAMS Activity
+          </h2>
+          <div className="relative w-full sm:w-auto group">
+            <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
             <input 
-              placeholder="Search RAMS..." 
-              className="bg-card border border-border/50 rounded-xl pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none w-full sm:w-64 uppercase font-bold tracking-widest"
+              placeholder="Filter by name or job number..." 
+              className="bg-white border border-slate-200 rounded-2xl pl-12 pr-6 py-3 text-sm font-bold text-slate-900 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/30 outline-none w-full sm:w-80 transition-all placeholder:text-slate-300 shadow-sm"
             />
           </div>
         </div>
 
-        <div className="bg-card border border-border/50 rounded-2xl overflow-hidden shadow-xl overflow-x-auto custom-scrollbar">
-          <table className="w-full text-left min-w-[800px]">
+        <div className="bg-white border border-slate-200 rounded-[40px] overflow-hidden shadow-xl shadow-slate-900/5 overflow-x-auto custom-scrollbar">
+          <table className="w-full text-left min-w-[900px]">
             <thead>
-              <tr className="border-b border-border/50 bg-secondary/30">
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">Document</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">Progress</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">Status</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Actions</th>
+              <tr className="border-b border-slate-100 bg-slate-50/50">
+                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Document Configuration</th>
+                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Execution Progress</th>
+                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Status</th>
+                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 text-right pr-12">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/50">
+            <tbody className="divide-y divide-slate-50">
               {loading ? (
-                <tr><td colSpan={5} className="px-6 py-8 text-center text-muted-foreground animate-pulse">Loading documents...</td></tr>
+                <tr><td colSpan={4} className="px-8 py-16 text-center text-slate-400 font-bold uppercase tracking-widest text-xs animate-pulse">Synchronizing Recordset...</td></tr>
               ) : rams.map((doc) => (
-                <tr key={doc.id} className="hover:bg-secondary/20 transition-colors group">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-                        <FileText className="w-5 h-5" />
+                <tr key={doc.id} className="hover:bg-slate-50/80 transition-all group">
+                  <td className="px-8 py-6">
+                    <div className="flex items-center gap-5">
+                      <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-emerald-600 group-hover:text-white group-hover:border-emerald-600 transition-all duration-300 shadow-sm">
+                        <FileText className="w-6 h-6" />
                       </div>
                       <div className="min-w-0">
-                        <p className="font-semibold text-sm text-white truncate max-w-[200px]">{doc.name}</p>
-                        <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Job #{doc.servicem8_job_id}</p>
+                        <p className="font-black text-slate-900 text-[15px] truncate max-w-[240px] tracking-tight">{doc.name}</p>
+                        <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest mt-0.5">Job #{doc.servicem8_job_id}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="space-y-1.5 w-40 sm:w-48">
-                      <div className="flex justify-between text-[10px] font-bold uppercase text-muted-foreground">
-                        <span>{doc.signers.filter((s:any) => s.status === 'signed').length} / {doc.signers.length} Signed</span>
+                  <td className="px-8 py-6">
+                    <div className="space-y-2.5 w-48">
+                      <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-slate-400">
+                        <span>{doc.signers.filter((s:any) => s.status === 'signed').length} / {doc.signers.length} Validated</span>
+                        <span>{Math.round((doc.signers.filter((s:any) => s.status === 'signed').length / (doc.signers.length || 1)) * 100)}%</span>
                       </div>
-                      <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
+                      <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner">
                         <div 
-                          className="h-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)] transition-all duration-500" 
-                          style={{ width: `${(doc.signers.filter((s:any) => s.status === 'signed').length / doc.signers.length) * 100}%` }}
+                          className="h-full bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.4)] transition-all duration-700 ease-out" 
+                          style={{ width: `${(doc.signers.filter((s:any) => s.status === 'signed').length / (doc.signers.length || 1)) * 100}%` }}
                         />
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-8 py-6">
                     <span className={cn(
-                      "inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
-                      doc.status === 'completed' || doc.signers.every((s:any) => s.status === 'signed') 
-                        ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/30" 
-                        : "bg-amber-500/10 text-amber-500 border border-amber-500/30"
+                      "inline-flex items-center px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all duration-300",
+                      doc.signers.every((s:any) => s.status === 'signed') 
+                        ? "bg-emerald-50 text-emerald-600 border-emerald-100 shadow-sm" 
+                        : "bg-amber-50 text-amber-600 border-amber-100 shadow-sm"
                     )}>
                       {doc.signers.every((s:any) => s.status === 'signed') ? 'ALL SIGNED' : 'PENDING'}
                     </span>
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center justify-end gap-2 pr-4">
-                      <div className="flex gap-2">
+                  <td className="px-8 py-6">
+                    <div className="flex items-center justify-end gap-3 pr-4">
                         <Link 
                           href={`/rams/${doc.id}/view`}
-                          className="px-3 py-1.5 bg-secondary text-foreground text-[10px] font-bold rounded-lg border border-border/50 hover:bg-secondary/70 transition-all flex items-center gap-1.5"
+                          className="px-5 py-2.5 bg-white text-slate-600 text-[10px] font-black uppercase tracking-widest rounded-xl border border-slate-200 hover:bg-slate-50 hover:text-slate-900 transition-all shadow-sm"
                         >
                           View
                         </Link>
@@ -197,18 +200,17 @@ export default function Dashboard() {
                             href={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/rams/${doc.final_file_path}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="px-3 py-1.5 bg-emerald-500/10 text-emerald-500 text-[10px] font-bold rounded-lg border border-emerald-500/20 hover:bg-emerald-500/20 transition-all flex items-center gap-1.5"
+                            className="px-5 py-2.5 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-xl border border-emerald-100 hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
                           >
                             Download
                           </a>
                         )}
-                      </div>
                       <button 
                         onClick={() => deleteRams(doc.id, doc.name, doc.servicem8_job_id)}
-                        className="p-1.5 text-slate-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all border border-transparent hover:border-red-500/20"
+                        className="p-3 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-100"
                         title="Delete RAMS"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </td>
@@ -216,56 +218,62 @@ export default function Dashboard() {
               ))}
             </tbody>
           </table>
+          {!loading && rams.length === 0 && (
+            <div className="py-32 text-center text-slate-400 font-bold uppercase tracking-widest text-xs flex flex-col items-center gap-4">
+               <FileText className="w-12 h-12 text-slate-100" />
+               No records found in active set
+            </div>
+          )}
         </div>
       </div>
 
       {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && documentToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-secondary/50 border border-border/50 rounded-2xl w-full max-w-md p-8 shadow-2xl animate-in zoom-in-95 duration-300">
-            <div className="flex flex-col items-center text-center gap-4">
-              <div className="p-4 bg-red-500/10 rounded-full">
-                <Trash2 className="w-8 h-8 text-red-500" />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white border border-slate-200 rounded-[40px] w-full max-w-lg p-12 shadow-2xl animate-in zoom-in-95 duration-500">
+            <div className="flex flex-col items-center text-center gap-8">
+              <div className="p-6 bg-red-50 rounded-[32px] border border-red-100 text-red-500 flex items-center justify-center">
+                <Trash2 className="w-10 h-10" />
               </div>
               
-              <div className="space-y-2">
-                <h3 className="text-xl font-bold">Delete Document?</h3>
-                <p className="text-sm text-muted-foreground">
-                  This action is permanent and will delete <strong>{documentToDelete.name}</strong> along with all signatures.
+              <div className="space-y-3">
+                <h3 className="text-3xl font-black text-slate-900 tracking-tight">Erase Document?</h3>
+                <p className="text-slate-500 font-medium text-lg leading-relaxed">
+                  This will permanently delete <strong className="text-slate-900 font-bold">{documentToDelete.name}</strong> and all associated signature records. This cannot be undone.
                 </p>
               </div>
 
-              <div className="w-full space-y-4 mt-4">
-                <div className="space-y-2 text-left">
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Type Job Number to Confirm: <span className="text-foreground">{documentToDelete.jobNumber}</span>
+              <div className="w-full space-y-6">
+                <div className="space-y-2.5 text-left">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 pl-4">
+                    Confirm Job Number: <span className="text-red-500 font-black">{documentToDelete.jobNumber}</span>
                   </label>
                   <input
                     type="text"
                     value={deleteInput}
                     onChange={(e) => setDeleteInput(e.target.value)}
-                    placeholder="Enter Job Number..."
-                    className="w-full bg-secondary/50 border border-border/50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500/50 transition-all font-mono"
+                    placeholder="Type Job Number to confirm..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-3xl px-8 py-5 outline-none focus:ring-4 focus:ring-red-500/10 focus:border-red-500/30 transition-all font-mono font-bold text-center text-slate-900"
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 pt-2">
+                <div className="grid grid-cols-2 gap-4">
                   <button
                     onClick={() => {
                       setIsDeleteModalOpen(false);
                       setDocumentToDelete(null);
                     }}
                     disabled={isDeleting}
-                    className="w-full px-4 py-3 bg-secondary text-foreground text-sm font-bold rounded-xl border border-border/50 hover:bg-secondary/80 transition-all disabled:opacity-50"
+                    className="w-full px-8 py-5 bg-slate-50 text-slate-600 text-[11px] font-black uppercase tracking-widest rounded-3xl border border-slate-200 hover:bg-slate-100 transition-all shadow-sm"
                   >
-                    Cancel
+                    Keep Secure
                   </button>
                   <button
                     onClick={handleFinalDelete}
                     disabled={isDeleting || deleteInput !== documentToDelete.jobNumber}
-                    className="w-full px-4 py-3 bg-red-500 text-white text-sm font-bold rounded-xl shadow-lg shadow-red-500/20 hover:bg-red-600 transition-all disabled:opacity-50 disabled:grayscale"
+                    className="w-full px-8 py-5 bg-red-500 text-white text-[11px] font-black uppercase tracking-widest rounded-3xl shadow-xl shadow-red-500/20 hover:bg-red-600 transition-all disabled:opacity-30 active:scale-95 transition-all"
                   >
-                    {isDeleting ? "Deleting..." : "Confirm Delete"}
+                    {isDeleting ? "Shredding..." : "Confirm Deletion"}
                   </button>
                 </div>
               </div>

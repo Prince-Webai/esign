@@ -21,7 +21,7 @@
   --primary-foreground: #ffffff;
   --secondary: #f1f5f9;
   --secondary-foreground: #334155;
-  --muted: #f8fafc;
+  --muted: #f1f5f9;
   --muted-foreground: #64748b;
   --accent: #f1f5f9;
   --accent-foreground: #0f172a;
@@ -29,8 +29,8 @@
   --destructive-foreground: #ffffff;
   --border: #e2e8f0;
   --input: #ffffff;
-  --ring: rgba(16, 185, 129, 0.2);
-  --radius: 1rem;
+  --ring: #10b981;
+  --radius: 1.25rem;
 }
 
 .dark {
@@ -67,9 +67,14 @@
 }
 
 .glass {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.dark .glass {
+  background: rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 .premium-gradient {

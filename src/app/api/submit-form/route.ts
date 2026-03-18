@@ -64,8 +64,34 @@ export async function POST(req: NextRequest) {
 
     if (fields) {
       for (const field of fields) {
+        if (field.type === 'header') {
+          currentY -= 20;
+          if (currentY < 100) { page = pdfDoc.addPage([600, 800]); currentY = 750; }
+          page.drawLine({
+            start: { x: 50, y: currentY },
+            end: { x: 550, y: currentY },
+            thickness: 2,
+            color: rgb(0.1, 0.1, 0.1),
+          });
+          currentY -= 25;
+          page.drawText(field.label.toUpperCase(), {
+            x: 50,
+            y: currentY,
+            size: 14,
+            font,
+            color: rgb(0, 0, 0),
+          });
+          currentY -= 40;
+          continue;
+        }
+
         const val = data[field.id];
-        if (val === undefined || val === null) continue;
+        if (val === undefined || val === null || val === "") continue;
+
+        if (currentY < 80) {
+            page = pdfDoc.addPage([600, 800]);
+            currentY = 750;
+        }
 
         // Label
         page.drawText(field.label.toUpperCase(), {
@@ -87,11 +113,27 @@ export async function POST(req: NextRequest) {
                     image = await pdfDoc.embedJpg(imageBytes);
                 }
                 
-                const dims = image.scale(0.5);
-                // Check if image fits on page, else add new page
-                if (currentY - dims.height < 50) {
+                const maxWidth = 480;
+                // Available vertical space on this page
+                const availableHeight = currentY - 50;
+
+                // Start with desired max size, then clamp to available space
+                let scale = Math.min(maxWidth / image.width, 280 / image.height, 1);
+                let dims = image.scale(scale);
+
+                // If even at this scale it doesn't fit, scale further to available height
+                if (dims.height > availableHeight && availableHeight > 80) {
+                    scale = availableHeight / image.height;
+                    // Also enforce max width
+                    if (image.width * scale > maxWidth) scale = maxWidth / image.width;
+                    dims = image.scale(scale);
+                }
+
+                // Only go to new page if there's genuinely no usable space (< 80px)
+                if (availableHeight < 80) {
                     page = pdfDoc.addPage([600, 800]);
                     currentY = 750;
+                    dims = image.scale(Math.min(maxWidth / image.width, 280 / image.height, 1));
                 }
 
                 page.drawImage(image, {
@@ -100,7 +142,7 @@ export async function POST(req: NextRequest) {
                     width: dims.width,
                     height: dims.height,
                 });
-                currentY -= dims.height + 30;
+                currentY -= dims.height + 20;
             } catch (e) {
                 page.drawText("[Image processing failed]", { x: 70, y: currentY, size: 10, font: regularFont, color: rgb(0.8, 0, 0) });
                 currentY -= 20;
@@ -108,28 +150,28 @@ export async function POST(req: NextRequest) {
         } else {
             // Text values
             const textLines = String(val).split('\n');
-            for (const line of textLines) {
-                // Check page height
-                if (currentY < 50) {
-                    page = pdfDoc.addPage([600, 800]);
-                    currentY = 750;
+            for (let line of textLines) {
+                const words = line.split(' ');
+                let currentLine = '';
+                for (const word of words) {
+                    const testLine = currentLine + word + ' ';
+                    const textWidth = regularFont.widthOfTextAtSize(testLine, 12);
+                    if (textWidth > 450 && currentLine !== '') {
+                        if (currentY < 50) { page = pdfDoc.addPage([600, 800]); currentY = 750; }
+                        page.drawText(currentLine, { x: 70, y: currentY, size: 12, font: regularFont, color: rgb(0.2, 0.2, 0.2) });
+                        currentY -= 18;
+                        currentLine = word + ' ';
+                    } else {
+                        currentLine = testLine;
+                    }
                 }
-                page.drawText(line, {
-                    x: 70,
-                    y: currentY,
-                    size: 12,
-                    font: regularFont,
-                    color: rgb(0.2, 0.2, 0.2),
-                });
-                currentY -= 18;
+                if (currentLine.trim()) {
+                    if (currentY < 50) { page = pdfDoc.addPage([600, 800]); currentY = 750; }
+                    page.drawText(currentLine, { x: 70, y: currentY, size: 12, font: regularFont, color: rgb(0.2, 0.2, 0.2) });
+                    currentY -= 18;
+                }
             }
             currentY -= 15;
-        }
-
-        // Final sanity check for page capacity
-        if (currentY < 100) {
-            page = pdfDoc.addPage([600, 800]);
-            currentY = 750;
         }
       }
     }

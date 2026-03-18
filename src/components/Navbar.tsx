@@ -68,7 +68,7 @@ export function Navbar() {
 
       {/* Navigation Sidebar */}
       <nav className={cn(
-        "fixed left-0 top-0 h-full w-64 border-r border-border bg-card/50 backdrop-blur-xl z-[60] transition-transform duration-300 lg:translate-x-0",
+        "fixed left-0 top-0 h-full w-64 border-r border-slate-200 bg-white/70 backdrop-blur-xl z-[60] transition-transform duration-300 lg:translate-x-0 shadow-[4px_0_24px_-10px_rgba(0,0,0,0.05)]",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex flex-col h-full p-6">
@@ -92,14 +92,14 @@ export function Navbar() {
                   key={item.name}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
+                    "flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 group",
                     isActive 
-                      ? "bg-primary text-primary-foreground shadow-md shadow-primary/30" 
-                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                      ? "bg-emerald-600 text-white shadow-xl shadow-emerald-500/20 scale-[1.02]" 
+                      : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                   )}
                 >
-                  <item.icon className={cn("w-5 h-5", isActive ? "text-primary-foreground" : "group-hover:scale-110 transition-transform")} />
-                  <span className="font-medium">{item.name}</span>
+                  <item.icon className={cn("w-5 h-5 transition-transform duration-300", isActive ? "text-white scale-110" : "group-hover:text-emerald-500 group-hover:scale-110")} />
+                  <span className="font-black text-[11px] uppercase tracking-widest">{item.name}</span>
                 </Link>
               );
             })}
