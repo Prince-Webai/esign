@@ -200,6 +200,18 @@ export async function POST(req: NextRequest) {
     // 5. Trigger Webhook
     if (form.webhook_url) {
       console.log(`Payload ready for webhook: ${form.webhook_url}`);
+      
+      // Create a human-readable data object for the webhook payload
+      const humanReadableData: Record<string, any> = {};
+      if (fields) {
+        for (const field of fields) {
+          if (field.type === 'header' || field.id === 'builtin-description') continue;
+          if (data[field.id] !== undefined && data[field.id] !== null) {
+            humanReadableData[field.label] = data[field.id];
+          }
+        }
+      }
+
       try {
         await fetch(form.webhook_url, {
           method: 'POST',
@@ -209,7 +221,7 @@ export async function POST(req: NextRequest) {
             formId: formId,
             formName: form.name,
             submissionId: submissionId,
-            data: data,
+            data: humanReadableData,
             pdfUrl: publicUrl
           })
         });
