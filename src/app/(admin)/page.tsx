@@ -220,7 +220,7 @@ export default function Dashboard() {
           </table>
           {!loading && rams.length === 0 && (
             <div className="py-32 text-center text-slate-400 font-bold uppercase tracking-widest text-xs flex flex-col items-center gap-4">
-               <FileText className="w-12 h-12 text-slate-100" />
+               <FileText className="w-12 h-12 text-slate-300" />
                No records found in active set
             </div>
           )}

@@ -65,7 +65,7 @@ export function FormDashboard() {
       {loading ? (
         <div className="flex flex-col items-center justify-center py-32 space-y-4"><Loader2 className="w-12 h-12 text-emerald-600 animate-spin" /><p className="text-slate-400 font-bold tracking-widest uppercase text-xs">Synchronizing Records...</p></div>
       ) : filteredForms.length === 0 ? (
-        <div className="bg-white border border-slate-200 rounded-[48px] p-24 text-center shadow-sm"><FileText className="w-16 h-16 text-slate-100 mx-auto mb-6" /><p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-xs">No active configurations detected</p><Link href="/forms/new" className="mt-8 inline-block text-emerald-600 font-black text-xs uppercase tracking-widest hover:text-emerald-700 transition-colors">Initialize first form →</Link></div>
+        <div className="bg-white border border-slate-200 rounded-[48px] p-24 text-center shadow-sm"><FileText className="w-16 h-16 text-slate-300 mx-auto mb-6" /><p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-xs">No active configurations detected</p><Link href="/forms/new" className="mt-8 inline-block text-emerald-600 font-black text-xs uppercase tracking-widest hover:text-emerald-700 transition-colors">Initialize first form →</Link></div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredForms.map((form) => (

@@ -91,7 +91,7 @@ export function FormResponses({ formId }: { formId: string }) {
       {loading ? (
         <div className="flex flex-col items-center justify-center py-32 space-y-4"><Loader2 className="w-12 h-12 text-emerald-500 animate-spin" /><p className="text-slate-400 font-bold tracking-widest uppercase text-xs">Exhuming Secure Records...</p></div>
       ) : filteredSubmissions.length === 0 ? (
-        <div className="bg-white border border-slate-200 shadow-sm rounded-[48px] p-24 text-center"><Clock className="w-12 h-12 text-slate-200 mx-auto mb-6" /><p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-xs">No entries discovered in current timeline</p></div>
+        <div className="bg-white border border-slate-200 shadow-sm rounded-[48px] p-24 text-center"><Clock className="w-12 h-12 text-slate-300 mx-auto mb-6" /><p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-xs">No entries discovered in current timeline</p></div>
       ) : (
         <div className="grid grid-cols-1 gap-6">
            {filteredSubmissions.map((sub) => (
