@@ -38,7 +38,7 @@ export default function EditTemplate() {
             <ChevronLeft className="w-5 h-5" />
           </Link>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-white">Edit RAMS Template</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Edit RAMS Template</h1>
             <p className="text-muted-foreground">Adjust signature fields and default roles.</p>
           </div>
         </div>

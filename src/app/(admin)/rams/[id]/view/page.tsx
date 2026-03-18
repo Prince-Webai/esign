@@ -24,7 +24,7 @@ export default function ViewRAMS() {
           <ChevronLeft className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">RAMS Inspection</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">RAMS Inspection</h1>
           <p className="text-muted-foreground">View document and check signature integrity.</p>
         </div>
       </div>

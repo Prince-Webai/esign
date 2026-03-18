@@ -32,7 +32,7 @@ export default function TemplatesPage() {
             <ChevronLeft className="w-5 h-5" />
           </Link>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-white">RAMS Templates</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900">RAMS Templates</h1>
             <p className="text-muted-foreground">Manage your reusable signature placements.</p>
           </div>
         </div>
@@ -63,7 +63,7 @@ export default function TemplatesPage() {
                  {new Date(t.created_at).toLocaleDateString()}
                </span>
             </div>
-            <h3 className="text-xl font-bold text-white mb-1">{t.name}</h3>
+            <h3 className="text-xl font-bold text-slate-900 mb-1">{t.name}</h3>
             <p className="text-sm text-muted-foreground mb-6">Standard signature mapping for {t.name}.</p>
             <div className="flex gap-2">
                <Link href={`/templates/${t.id}`} className="flex-1 text-center py-2 text-xs font-bold rounded-lg bg-secondary hover:bg-secondary/70 transition-colors">

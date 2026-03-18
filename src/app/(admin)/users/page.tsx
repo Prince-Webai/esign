@@ -20,7 +20,7 @@ export default function UsersPage() {
           <ChevronLeft className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">User Management</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">User Management</h1>
           <p className="text-muted-foreground">Manage authorized signers and their credentials.</p>
         </div>
       </div>

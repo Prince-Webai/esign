@@ -20,7 +20,7 @@ export default function NewRAMS() {
           <ChevronLeft className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">Launch New RAMS</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Launch New RAMS</h1>
           <p className="text-muted-foreground">Select a template, upload the job-specific PDF, and assign signers.</p>
         </div>
       </div>

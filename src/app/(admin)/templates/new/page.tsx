@@ -20,7 +20,7 @@ export default function NewTemplate() {
           <ChevronLeft className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">New RAMS Template</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">New RAMS Template</h1>
           <p className="text-muted-foreground">Upload a sample RAMS and define signature placement areas.</p>
         </div>
       </div>
