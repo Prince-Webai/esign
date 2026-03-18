@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { FileText, Users, Settings, LogOut, LayoutDashboard, UserCheck, Menu, X } from "lucide-react";
+import { FileText, Users, Settings, LogOut, LayoutDashboard, UserCheck, Menu, X, Layout } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const navItems = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Templates", href: "/templates", icon: FileText },
+  { name: "Forms", href: "/forms", icon: Layout },
   { name: "Launch RAMS", href: "/rams/new", icon: Users },
   { name: "Signers", href: "/users", icon: UserCheck },
   { name: "Settings", href: "/settings", icon: Settings },
