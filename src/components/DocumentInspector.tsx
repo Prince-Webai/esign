@@ -136,7 +136,7 @@ export function DocumentInspector({ ramsId }: { ramsId: string }) {
              {document.status === 'completed' && (
                <div className="space-y-3 pt-4">
                  <a 
-                   href={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/rams/${document.final_file_path}`}
+                   href={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/rams/${document.final_file_path}?t=${new Date().getTime()}`}
                    target="_blank"
                    rel="noreferrer"
                    className="w-full flex items-center justify-center gap-2 py-3 bg-emerald-500 text-black font-bold rounded-xl hover:scale-[1.02] transition-transform shadow-lg shadow-emerald-500/20"
