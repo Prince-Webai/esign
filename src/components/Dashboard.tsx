@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { FileText, Check, Clock, ChevronRight, Loader2, User, LogOut } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { useOrganization } from "@/hooks/useOrganization";
 
 interface AssignedRAMS {
   id: string;
@@ -23,6 +24,7 @@ interface AssignedRAMS {
 }
 
 export function SignerDashboard({ userEmail }: { userEmail: string }) {
+  const { org } = useOrganization();
   const [documents, setDocuments] = useState<AssignedRAMS[]>([]);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("");
@@ -81,11 +83,22 @@ export function SignerDashboard({ userEmail }: { userEmail: string }) {
       <div className="max-w-5xl mx-auto space-y-12">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-slate-200">
-          <div className="space-y-2">
-            <h1 className="text-4xl font-bold tracking-tight text-slate-900">
-              Welcome back, <span className="text-primary">{userName.split(' ')[0]}</span>
-            </h1>
-            <p className="text-slate-500 font-medium">You have <span className="text-slate-900 font-bold">{documents.filter(d => d.status === 'pending').length} pending</span> documents to sign.</p>
+          <div className="space-y-4">
+            {org.logo_url ? (
+              <img src={org.logo_url} alt={org.name} className="h-10 object-contain" />
+            ) : (
+              <div className="inline-flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg premium-gradient flex items-center justify-center font-bold text-white text-xs">TRE</div>
+                <span className="font-bold text-slate-900 tracking-tight">{org.name}</span>
+              </div>
+            )}
+            <div>
+              <h1 className="text-4xl font-bold tracking-tight text-slate-900">
+                Welcome back, <span className="text-primary">{userName.split(' ')[0]}</span>
+              </h1>
+              <p className="text-slate-500 font-medium">You have <span className="text-slate-900 font-bold">{documents.filter(d => d.status === 'pending').length} pending</span> documents to sign.</p>
+            </div>
+
           </div>
           
           <button 

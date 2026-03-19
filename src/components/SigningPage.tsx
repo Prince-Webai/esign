@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { Check, Edit3, X, Loader2, Users, FileText, Key } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { useOrganization } from "@/hooks/useOrganization";
 
 // Use the local worker (version 5.4.296) to match react-pdf and bypass CORS
 pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
@@ -29,6 +30,7 @@ interface Field {
 }
 
 export default function SigningPage({ token }: { token: string }) {
+  const { org } = useOrganization();
   const [loading, setLoading] = useState(true);
   const [signer, setSigner] = useState<any>(null);
   const [document, setDocument] = useState<any>(null);
@@ -248,7 +250,11 @@ export default function SigningPage({ token }: { token: string }) {
       {/* Header */}
       <header className="h-16 border-b border-slate-200 flex items-center justify-between px-6 bg-white/80 backdrop-blur-md z-30">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg premium-gradient flex items-center justify-center font-bold text-[10px]">TRE</div>
+          {org.logo_url ? (
+            <img src={org.logo_url} alt={org.name} className="h-8 max-w-[120px] object-contain" />
+          ) : (
+            <div className="w-8 h-8 rounded-lg premium-gradient flex items-center justify-center font-bold text-white text-[10px]">TRE</div>
+          )}
           <div className="min-w-0">
             <h1 className="font-bold text-sm truncate max-w-[200px] md:max-w-md">{document.name}</h1>
             <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Secure Signing Session</p>
@@ -502,7 +508,7 @@ export default function SigningPage({ token }: { token: string }) {
           
           <div className="mt-auto p-6 bg-slate-50 border-t border-slate-200">
               <p className="text-[9px] text-slate-400 text-center uppercase tracking-[0.2em] font-bold">
-                TRE Energy Today • Powered by Antigravity
+                {org.name} Today • Powered by Antigravity
               </p>
           </div>
         </div>

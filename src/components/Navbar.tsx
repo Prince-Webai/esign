@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { FileText, Users, Settings, LogOut, LayoutDashboard, UserCheck, Menu, X, Layout } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useOrganization } from "@/hooks/useOrganization";
 
 const navItems = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -19,6 +20,7 @@ export function Navbar() {
   const pathname = usePathname();
   const [session, setSession] = useState<any>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const { org } = useOrganization();
 
   useEffect(() => {
     const saved = localStorage.getItem("tre_user_session");
@@ -47,8 +49,16 @@ export function Navbar() {
       {/* Mobile Bar */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-card/80 backdrop-blur-xl border-b border-border z-[60] flex items-center justify-between px-6">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg premium-gradient flex items-center justify-center font-bold text-white text-xs">TRE</div>
-          <span className="font-bold text-sm tracking-tight">TRE Energy</span>
+          {org.logo_url ? (
+            <div className="flex items-center gap-2">
+              <img src={org.logo_url} alt={org.name} className="h-8 max-w-[120px] object-contain" />
+            </div>
+          ) : (
+            <>
+              <div className="w-8 h-8 rounded-lg premium-gradient flex items-center justify-center font-bold text-white text-xs">TRE</div>
+              <span className="font-bold text-sm tracking-tight">{org.name}</span>
+            </>
+          )}
         </div>
         <button 
           onClick={() => setIsOpen(!isOpen)}
@@ -72,17 +82,24 @@ export function Navbar() {
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex flex-col h-full p-6">
-          <div className="hidden lg:flex items-center gap-3 mb-10 px-2">
-            <div className="w-10 h-10 rounded-xl premium-gradient flex items-center justify-center font-bold text-white shadow-lg shadow-primary/20">
-              TRE
-            </div>
-            <div>
-              <h1 className="font-bold text-lg tracking-tight">TRE Energy</h1>
-              <p className="text-xs text-muted-foreground uppercase tracking-widest font-semibold">
-                {session?.role === 'admin' ? 'Admin Portal' : 'Signer Portal'}
-              </p>
-            </div>
+          <div className="hidden lg:flex items-center gap-3 mb-10 px-2 min-h-[48px]">
+            {org.logo_url ? (
+               <img src={org.logo_url} alt={org.name} className="h-10 max-w-[200px] object-contain drop-shadow-sm" />
+            ) : (
+              <>
+                <div className="w-10 h-10 rounded-xl premium-gradient flex items-center justify-center font-bold text-white shadow-lg shadow-primary/20 flex-shrink-0">
+                  TRE
+                </div>
+                <div>
+                  <h1 className="font-bold text-lg tracking-tight truncate max-w-[140px]">{org.name}</h1>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold truncate max-w-[140px]">
+                    {session?.role === 'admin' ? 'Admin Portal' : 'Signer Portal'}
+                  </p>
+                </div>
+              </>
+            )}
           </div>
+
 
           <div className="flex-1 space-y-2 lg:mt-0 mt-20">
             {itemsToDisplay.map((item) => {

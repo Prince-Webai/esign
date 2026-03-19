@@ -15,6 +15,15 @@ export async function POST(req: NextRequest) {
 
     if (!form) throw new Error('Form configuration not found');
 
+    const { data: orgSettings } = await supabase
+      .from('organization_settings')
+      .select('*')
+      .eq('id', 1)
+      .single();
+    
+    const orgName = orgSettings?.name || 'TRE Energy';
+    const orgLogoUrl = orgSettings?.logo_url;
+
     // 2. Generate PDF
     const pdfDoc = await PDFDocument.create();
     let page = pdfDoc.addPage([600, 800]);
@@ -22,29 +31,67 @@ export async function POST(req: NextRequest) {
     const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
     const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-    // Header
+    // Header (Emerald 600: #059669 -> rgb(0.02, 0.59, 0.41))
     page.drawRectangle({
       x: 0,
       y: height - 100,
       width,
       height: 100,
-      color: rgb(0.05, 0.05, 0.1),
+      color: rgb(0.02, 0.59, 0.41),
     });
 
-    page.drawText('FORM SUBMISSION REPORT', {
-      x: 50,
-      y: height - 50,
-      size: 24,
+    let logoWidthOffset = 0;
+    if (orgLogoUrl) {
+      try {
+        const logoRes = await fetch(orgLogoUrl);
+        const logoBuffer = await logoRes.arrayBuffer();
+        let logoImage;
+        if (orgLogoUrl.toLowerCase().includes('.png') || orgLogoUrl.includes('image/png')) {
+          logoImage = await pdfDoc.embedPng(logoBuffer);
+        } else {
+          logoImage = await pdfDoc.embedJpg(logoBuffer);
+        }
+        
+        // Scale logo to fit within 150x60
+        const scale = Math.min(150 / logoImage.width, 60 / logoImage.height);
+        const dims = logoImage.scale(scale);
+        
+        page.drawImage(logoImage, {
+          x: 50,
+          y: height - 50 - dims.height / 2,
+          width: dims.width,
+          height: dims.height,
+        });
+        
+        logoWidthOffset = dims.width + 20;
+      } catch (err) {
+        console.error("Failed to embed organization logo in PDF", err);
+      }
+    } else {
+      page.drawText(orgName.toUpperCase(), {
+        x: 50,
+        y: height - 45,
+        size: 16,
+        font,
+        color: rgb(1, 1, 1),
+      });
+      logoWidthOffset = font.widthOfTextAtSize(orgName.toUpperCase(), 16) + 20;
+    }
+
+    page.drawText('FORM SUBMISSION', {
+      x: 50 + logoWidthOffset,
+      y: height - 42,
+      size: 20,
       font,
       color: rgb(1, 1, 1),
     });
 
     page.drawText(form.name.toUpperCase(), {
-      x: 50,
-      y: height - 75,
+      x: 50 + logoWidthOffset,
+      y: height - 68,
       size: 14,
       font: regularFont,
-      color: rgb(0.5, 0.5, 0.6),
+      color: rgb(0.8, 0.9, 0.8),
     });
 
     let currentY = height - 150;

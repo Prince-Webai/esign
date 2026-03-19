@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Key, Mail, Loader2, ShieldCheck, ArrowRight } from "lucide-react";
+import { useOrganization } from "@/hooks/useOrganization";
 
 export default function LoginPage() {
+  const { org } = useOrganization();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -65,10 +67,14 @@ export default function LoginPage() {
 
       <div className="w-full max-w-md space-y-8 relative z-10">
         <div className="text-center space-y-4">
-          <div className="inline-flex w-16 h-16 rounded-2xl premium-gradient items-center justify-center font-bold text-2xl text-white shadow-2xl shadow-primary/20 mb-2">
-            TRE
-          </div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">RAMS Connect</h1>
+          {org.logo_url ? (
+            <img src={org.logo_url} alt={org.name} className="h-16 mx-auto object-contain drop-shadow-xl mb-2" />
+          ) : (
+            <div className="inline-flex w-16 h-16 rounded-2xl premium-gradient items-center justify-center font-bold text-2xl text-white shadow-2xl shadow-primary/20 mb-2">
+              TRE
+            </div>
+          )}
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">{org.name}</h1>
           <p className="text-slate-500 font-medium italic">Secure Identity-Based Signature Portal</p>
         </div>
 
@@ -122,7 +128,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-center text-[10px] text-slate-600 font-bold uppercase tracking-[0.2em] pt-8">
-          TRE Energy • Secure Infrastructure
+          {org.name} • Secure Infrastructure
         </p>
       </div>
     </div>
