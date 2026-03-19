@@ -67,18 +67,7 @@ export async function POST(req: NextRequest) {
       placement_y: s.y,
       width: s.width,
       height: s.height,
-      page_number: s.page_number,
-      name_placement_x: s.name_x,
-      name_placement_y: s.name_y,
-      name_width: s.name_width,
-      name_height: s.name_height,
-      name_page_number: s.name_page_number,
-      name_text: s.name_text,
-      date_placement_x: s.date_x,
-      date_placement_y: s.date_y,
-      date_width: s.date_width,
-      date_height: s.date_height,
-      date_page_number: s.date_page_number
+      page_number: s.page_number
     }));
 
     const { error: signersError } = await supabaseAdmin
