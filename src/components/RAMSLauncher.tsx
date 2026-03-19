@@ -375,18 +375,7 @@ export function RAMSLauncher() {
         placement_y: s.y,
         width: s.width,
         height: s.height,
-        page_number: s.page_number,
-        name_placement_x: s.name_x || null,
-        name_placement_y: s.name_y || null,
-        name_width: s.name_width || null,
-        name_height: s.name_height || null,
-        name_page_number: s.name_page_number || null,
-        name_text: s.name_text || null,
-        date_placement_x: s.date_x || null,
-        date_placement_y: s.date_y || null,
-        date_width: s.date_width || null,
-        date_height: s.date_height || null,
-        date_page_number: s.date_page_number || null
+        page_number: s.page_number
       }));
 
       const { error: signersError } = await supabase.from("signers").insert(signersWithRams);
