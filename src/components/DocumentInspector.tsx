@@ -134,15 +134,48 @@ export function DocumentInspector({ ramsId }: { ramsId: string }) {
              </div>
 
              {document.status === 'completed' && (
-               <a 
-                 href={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/rams/${document.final_file_path}`}
-                 target="_blank"
-                 rel="noreferrer"
-                 className="w-full flex items-center justify-center gap-2 py-3 bg-emerald-500 text-black font-bold rounded-xl hover:scale-[1.02] transition-transform shadow-lg shadow-emerald-500/20"
-               >
-                 <Download className="w-4 h-4" />
-                 Download Signed PDF
-               </a>
+               <div className="space-y-3 pt-4">
+                 <a 
+                   href={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/rams/${document.final_file_path}`}
+                   target="_blank"
+                   rel="noreferrer"
+                   className="w-full flex items-center justify-center gap-2 py-3 bg-emerald-500 text-black font-bold rounded-xl hover:scale-[1.02] transition-transform shadow-lg shadow-emerald-500/20"
+                 >
+                   <Download className="w-4 h-4" />
+                   Download Signed PDF
+                 </a>
+
+                 <button
+                   onClick={async () => {
+                     if (!window.confirm("This will re-process the PDF with latest fixes. Proceed?")) return;
+                     const btn = document.getElementById('regen-btn');
+                     if (btn) btn.innerHTML = "Regenerating...";
+                     
+                     try {
+                       const res = await fetch('/api/finalize-pdf', {
+                         method: 'POST',
+                         headers: { 'Content-Type': 'application/json' },
+                         body: JSON.stringify({ ramsId })
+                       });
+                       const result = await res.json();
+                       if (result.success) {
+                         alert("PDF Regenerated! Refreshing to update link.");
+                         window.location.reload();
+                       } else {
+                         alert("Error: " + result.error);
+                       }
+                     } catch (err: any) {
+                       alert(err.message);
+                     } finally {
+                       if (btn) btn.innerHTML = "Regenerate Final PDF";
+                     }
+                   }}
+                   id="regen-btn"
+                   className="w-full py-2 border border-border rounded-xl text-[10px] font-bold text-muted-foreground hover:bg-secondary/50 transition-colors uppercase tracking-widest"
+                 >
+                   Regenerate Final PDF
+                 </button>
+               </div>
              )}
            </div>
         </div>
