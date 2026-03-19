@@ -388,7 +388,7 @@ export function RAMSLauncher() {
       });
 
       alert("RAMS Published! Emails are being dispatched.");
-      window.location.href = "/rams";
+      window.location.href = "/dashboard";
     } catch (error: any) {
       console.error(error);
       alert(error.message || "Error publishing RAMS");
