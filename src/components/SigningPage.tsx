@@ -18,6 +18,23 @@ interface Signer {
   role_name: string;
   status: string;
   signature_data: string | null;
+  signed_at: string | null;
+  placement_x: number;
+  placement_y: number;
+  width: number;
+  height: number;
+  page_number: number;
+  name_x: number | null;
+  name_y: number | null;
+  name_width: number | null;
+  name_height: number | null;
+  name_page_number: number | null;
+  name_text: string | null;
+  date_x: number | null;
+  date_y: number | null;
+  date_width: number | null;
+  date_height: number | null;
+  date_page_number: number | null;
 }
 
 interface Field {
@@ -39,6 +56,7 @@ export default function SigningPage({ token }: { token: string }) {
   const [numPages, setNumPages] = useState(0);
   const [isSigning, setIsSigning] = useState(false);
   const [errorStatus, setErrorStatus] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   
   // Security State
   const [pin, setPin] = useState("");
@@ -81,21 +99,33 @@ export default function SigningPage({ token }: { token: string }) {
 
         setSigner(signerData);
         setDocument(signerData.rams_documents);
+        if (signerData.signed_at) {
+            setSelectedDate(new Date(signerData.signed_at).toISOString().split('T')[0]);
+        }
 
-        // 2 & 3. Fetch all signers and template fields in parallel
-        const [signersRes, fieldsRes] = await Promise.all([
-          supabase
+        // 2. Fetch all signers (which now contain the coordinate fields natively)
+        const { data: signersRes } = await supabase
             .from("signers")
-            .select("id, name, role_name, status, signature_data")
-            .eq("rams_id", signerData.rams_id),
-          supabase
-            .from("template_signature_fields")
             .select("*")
-            .eq("template_id", signerData.rams_documents.template_id)
-        ]);
+            .eq("rams_id", signerData.rams_id);
 
-        if (signersRes.data) setAllSigners(signersRes.data);
-        if (fieldsRes.data) setFields(fieldsRes.data);
+        if (signersRes) {
+           setAllSigners(signersRes);
+           
+           // Construct fields array from signers for backward compatibility in the UI overlay
+           // We'll focus on the primary signature field for the "Sign Here" marker
+           const mappedFields = signersRes
+             .filter(s => s.placement_x != null)
+             .map(s => ({
+                role_name: s.role_name,
+                placement_x: s.placement_x,
+                placement_y: s.placement_y,
+                page_number: s.page_number,
+                width: s.width,
+                height: s.height
+             }));
+           setFields(mappedFields);
+        }
 
         // 4. Identity Verification
         if (signerData.assigned_user_id) {
@@ -115,7 +145,7 @@ export default function SigningPage({ token }: { token: string }) {
           setIsVerified(true); // Open signing for unassigned roles (e.g. Guest)
         }
 
-        // 5. Set up Realtime listener inside the block where signerData is available
+        // 5. Set up Realtime listener
         const channel = supabase
           .channel(`rams-${signerData.rams_id}`)
           .on(
@@ -178,14 +208,14 @@ export default function SigningPage({ token }: { token: string }) {
         .update({
           signature_data: signatureData,
           status: "signed",
-          signed_at: new Date().toISOString()
+          signed_at: new Date(selectedDate).toISOString()
         })
         .eq("id", signer.id);
 
       if (error) throw error;
       
-      const now = new Date().toISOString();
-      const updatedSigner = { ...signer, status: "signed", signature_data: signatureData, signed_at: now };
+      const updatedTimestamp = new Date(selectedDate).toISOString();
+      const updatedSigner = { ...signer, status: "signed", signature_data: signatureData, signed_at: updatedTimestamp };
       setSigner(updatedSigner);
 
       // Check if this was the last signature
@@ -196,7 +226,6 @@ export default function SigningPage({ token }: { token: string }) {
       
       const allSigned = latestSigners?.every(s => s.status === 'signed');
       if (allSigned) {
-        console.log("All signers have signed! Triggering finalization...");
         fetch('/api/finalize-pdf', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -265,9 +294,6 @@ export default function SigningPage({ token }: { token: string }) {
           <div className="flex items-center gap-2 text-[10px] font-bold bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200 text-slate-500">
              <span>{numPages} PAGES TOTAL</span>
           </div>
-          <div className="hidden md:flex items-center gap-2 text-[10px] font-bold text-primary uppercase tracking-[0.2em]">
-             Scroll to Sign
-          </div>
         </div>
       </header>
 
@@ -276,9 +302,6 @@ export default function SigningPage({ token }: { token: string }) {
         <div className="flex-1 bg-slate-100 overflow-auto p-4 md:p-8 flex flex-col items-center gap-8 custom-scrollbar scroll-smooth">
           <Document 
             file={pdfUrl} 
-            onLoadError={(error) => {
-              console.error('PDF Load Error:', error);
-            }}
             onLoadSuccess={({ numPages }) => setNumPages(numPages)}
             loading={<div className="h-[800px] w-full flex items-center justify-center bg-slate-900/50"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}
             className="flex flex-col items-center gap-8"
@@ -303,27 +326,20 @@ export default function SigningPage({ token }: { token: string }) {
                     loading={<div className="h-[800px] w-full flex items-center justify-center bg-slate-900/50"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}
                   />
 
-                  {/* Per-Page Signatures Overlay */}
-                  {fields.filter(f => f.page_number === pageNum).map((field) => {
-                    const signerForField = allSigners.find(s => s.role_name === field.role_name);
-                    if (!signerForField?.signature_data) return null;
-
-                    return (
-                      <div
-                        key={field.role_name}
-                        style={{
-                          position: 'absolute',
-                          left: `${field.placement_x}%`,
-                          top: `${field.placement_y}%`,
-                          width: `${field.width}%`,
-                          height: `${field.height}%`,
-                          transform: 'translate(-50%, -50%)'
-                        }}
-                        className="animate-in fade-in zoom-in duration-500 group"
-                      >
-                        <img src={signerForField.signature_data} className="w-full h-full object-contain mix-blend-multiply" />
-                      </div>
-                    );
+                  {/* Overlay for ALL field types */}
+                  {allSigners.map((s) => {
+                    const elements = [];
+                    
+                    // 1. Signature
+                    if (s.signature_data && s.page_number === pageNum) {
+                      elements.push(
+                        <div key={`${s.id}-sig`} style={{ position: 'absolute', left: `${s.placement_x}%`, top: `${s.placement_y}%`, width: `${s.width}%`, height: `${s.height}%` }} className="animate-in fade-in zoom-in duration-500">
+                          <img src={s.signature_data} className="w-full h-full object-contain mix-blend-multiply" />
+                        </div>
+                      );
+                    }
+                    
+                    return elements;
                   })}
 
                   {/* "Sign Here" Marker */}
@@ -350,166 +366,80 @@ export default function SigningPage({ token }: { token: string }) {
               );
             })}
           </Document>
-
-          {numPages > 0 && (
-            <div className="flex justify-center py-8 w-full">
-              <button 
-                onClick={() => {
-                   const markerPage = document.getElementById(`page-${currentRoleField?.page_number}`);
-                   markerPage?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }}
-                className="bg-primary/10 border border-primary/20 px-8 py-4 rounded-2xl text-[10px] font-bold text-primary uppercase tracking-widest hover:bg-primary/20 transition-all flex items-center gap-2"
-              >
-                <Edit3 className="w-4 h-4" /> Scroll to Signature Spot
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Right Side: Signing Panel */}
         <div id="signing-panel" className="w-full lg:w-[400px] bg-white border-l border-slate-200 flex flex-col z-20 overflow-y-auto">
           <div className="p-6 space-y-8">
-            {/* User Greeting */}
             <div className="space-y-1 text-center">
               <h2 className="text-xl font-bold text-slate-900">Identity Check</h2>
               <p className="text-xs text-slate-500 font-medium">Signing as <span className="text-primary font-bold">{signer.role_name}</span>.</p>
             </div>
 
-            {/* Signature Area */}
             <div className="space-y-4">
               {signer.status !== "signed" ? (
                 <div className="space-y-4">
                   {!isVerified ? (
-                    <div className="bg-white border border-amber-500/20 rounded-2xl p-6 space-y-4 shadow-sm">
-                      <div className="flex flex-col items-center text-center gap-2">
-                        <div className="w-12 h-12 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center">
-                          <Key className="w-6 h-6" />
-                        </div>
+                    <div className="bg-white border border-amber-500/20 rounded-2xl p-6 space-y-4 shadow-sm text-center">
+                        <Key className="w-8 h-8 text-amber-500 mx-auto" />
                         <h3 className="font-bold text-slate-900">{assignedUser.name}</h3>
-                        <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Enter your 4-digit PIN</p>
-                      </div>
-                      
-                      <div className="flex justify-center gap-3">
-                        <input 
-                          type="password"
-                          maxLength={4}
-                          value={pin}
-                          onChange={(e) => setPin(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Enter' && handleVerifyPIN()}
-                          className="w-32 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-center text-xl font-bold tracking-[0.5em] focus:ring-2 focus:ring-primary/20 outline-none text-slate-900"
-                          placeholder="••••"
-                        />
-                      </div>
-
-                      <button 
-                        onClick={handleVerifyPIN}
-                        disabled={pin.length < 4 || isVerifying}
-                        className="w-full py-3 bg-amber-500 text-black font-bold rounded-xl hover:scale-[1.02] transition-all disabled:opacity-50"
-                      >
+                        <input type="password" maxLength={4} value={pin} onChange={(e) => setPin(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-center text-xl font-bold tracking-[0.5em] outline-none" placeholder="••••" />
+                      <button onClick={handleVerifyPIN} disabled={pin.length < 4 || isVerifying} className="w-full py-3 bg-amber-500 text-black font-bold rounded-xl hover:scale-[1.02] transition-all disabled:opacity-50">
                         {isVerifying ? "Verifying..." : "Unlock Canvas"}
                       </button>
                     </div>
                   ) : (
-                    <div className="space-y-4 animate-in fade-in zoom-in duration-300">
-                      <div className="flex justify-between items-end">
-                        <label className="text-[10px] font-bold text-slate-600 uppercase tracking-widest flex items-center gap-2">
-                          <Edit3 className="w-3 h-3" /> Digital Signature
-                        </label>
-                      </div>
-                      <div className="bg-white rounded-2xl p-4 shadow-sm ring-1 ring-slate-200 group">
-                        <SignatureCanvas 
-                          ref={sigCanvas}
-                          penColor="black"
-                          canvasProps={{ 
-                            width: 350, 
-                            height: 180, 
-                            className: "w-full h-[180px] cursor-crosshair touch-none" 
-                          }}
-                        />
-                        <div className="mt-2 pt-2 border-t border-slate-100 flex justify-between items-center px-1">
-                          <span className="text-[9px] text-slate-400 font-medium italic">Sign inside the area</span>
-                          <button 
-                            onClick={() => sigCanvas.current?.clear()}
-                            className="text-[10px] font-bold text-slate-400 hover:text-destructive transition-colors uppercase tracking-widest"
-                          >
-                            Clear
-                          </button>
+                    <div className="space-y-6 animate-in fade-in zoom-in duration-300">
+                      <div className="space-y-4">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Provide your Signature</label>
+                        <div className="bg-white rounded-2xl p-4 shadow-sm ring-1 ring-slate-200">
+                          <SignatureCanvas 
+                            ref={sigCanvas}
+                            penColor="black"
+                            canvasProps={{ width: 350, height: 180, className: "w-full h-[180px] cursor-crosshair touch-none" }}
+                          />
+                          <button onClick={() => sigCanvas.current?.clear()} className="mt-2 text-[10px] font-bold text-slate-400 hover:text-red-500 uppercase">Clear</button>
                         </div>
                       </div>
 
-                      <button 
-                        disabled={isSigning}
-                        onClick={handleSaveSignature}
-                        className="w-full flex items-center justify-center gap-3 px-8 py-4 rounded-xl premium-gradient text-primary-foreground font-bold shadow-xl shadow-primary/10 hover:scale-[1.02] transition-all active:scale-95 disabled:opacity-50"
-                      >
-                        {isSigning ? (
-                          <><Loader2 className="w-5 h-5 animate-spin" /> Processing...</>
-                        ) : (
-                          <><Check className="w-5 h-5" /> Confirm Signature</>
-                        )}
+                      <button onClick={handleSaveSignature} disabled={isSigning} className="w-full py-4 rounded-xl premium-gradient text-white font-bold shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all">
+                        {isSigning ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Confirm & Save"}
                       </button>
                     </div>
                   )}
                 </div>
               ) : (
                 <div className="bg-emerald-500/5 rounded-3xl p-8 border border-emerald-500/20 flex flex-col items-center gap-6 text-center animate-in fade-in zoom-in duration-500">
-                  <div className="w-20 h-20 rounded-full bg-emerald-500 flex items-center justify-center text-emerald-950 shadow-2xl shadow-emerald-500/40 border-4 border-emerald-400/50">
+                  <div className="w-20 h-20 rounded-full bg-emerald-500 flex items-center justify-center text-emerald-950 shadow-2xl">
                     <Check className="w-10 h-10 stroke-[3px]" />
                   </div>
-                  <div className="space-y-2">
-                    <h3 className="text-2xl font-bold text-slate-900 tracking-tight">Document Secured</h3>
-                    <p className="text-slate-500 text-sm font-medium">Your digital signature has been verified and permanently attached to this RAMS.</p>
-                  </div>
-                  
-                  <div className="w-full h-px bg-slate-200 my-2"></div>
-                  
-                  <Link 
-                    href="/dashboard"
-                    className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl bg-slate-100 border border-slate-200 text-slate-900 font-bold hover:bg-slate-200 transition-all uppercase tracking-widest text-xs"
-                  >
-                    Return to Dashboard
-                  </Link>
+                  <h3 className="text-2xl font-bold text-slate-900 tracking-tight">Document Secured</h3>
+                  <Link href="/dashboard" className="w-full py-4 rounded-xl bg-slate-100 border border-slate-200 text-slate-900 font-bold hover:bg-slate-200 transition-all uppercase tracking-widest text-xs">Return to Dashboard</Link>
                 </div>
               )}
             </div>
 
-            {/* Document Details */}
             <div className="space-y-4 pt-8 border-t border-slate-200">
               <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
                 <Users className="w-3 h-3" /> Collaboration Flow
               </h3>
               <div className="space-y-2">
                 {allSigners.map((s) => (
-                  <div key={s.id} className={cn(
-                    "flex items-center gap-3 p-3 rounded-xl border transition-all",
-                    s.id === signer.id ? "bg-primary/5 border-primary/20 ring-1 ring-primary/10" : "bg-slate-50 border-slate-200"
-                  )}>
-                    <div className={cn(
-                      "w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold",
-                      s.status === "signed" ? "bg-emerald-500 text-white shadow-sm shadow-emerald-500/20" : "bg-slate-200 text-slate-500"
-                    )}>
+                  <div key={s.id} className={cn("flex items-center gap-3 p-3 rounded-xl border transition-all", s.id === signer.id ? "bg-primary/5 border-primary/20" : "bg-slate-50 border-slate-200 text-slate-400")}>
+                    <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold", s.status === "signed" ? "bg-emerald-500 text-white" : "bg-slate-200")}>
                       {s.status === "signed" ? <Check className="w-4 h-4" /> : s.role_name.charAt(0)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold truncate text-slate-900">{s.name}</p>
-                      <p className="text-[9px] text-slate-500 font-medium uppercase tracking-wider">{s.role_name}</p>
+                      <p className="text-xs font-bold truncate">{s.name}</p>
+                      <p className="text-[9px] font-medium uppercase tracking-wider">{s.role_name}</p>
                     </div>
-                    {s.status === "signed" && (
-                      <div className="flex items-center gap-1.5 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                        <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></div>
-                        <span className="text-[8px] font-bold text-emerald-500 uppercase">Live</span>
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
             </div>
           </div>
-          
-          <div className="mt-auto p-6 bg-slate-50 border-t border-slate-200">
-              <p className="text-[9px] text-slate-400 text-center uppercase tracking-[0.2em] font-bold">
-                {org.name} Today • Powered by Antigravity
-              </p>
+          <div className="mt-auto p-6 bg-slate-50 border-t border-slate-200 text-[9px] text-slate-400 text-center uppercase tracking-[0.2em] font-bold">
+            {org.name} Today • Powered by Antigravity
           </div>
         </div>
       </div>

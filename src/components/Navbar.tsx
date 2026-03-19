@@ -9,7 +9,6 @@ import { useOrganization } from "@/hooks/useOrganization";
 
 const navItems = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Templates", href: "/templates", icon: FileText },
   { name: "Forms", href: "/forms", icon: Layout },
   { name: "Launch RAMS", href: "/rams/new", icon: Users },
   { name: "Signers", href: "/users", icon: UserCheck },

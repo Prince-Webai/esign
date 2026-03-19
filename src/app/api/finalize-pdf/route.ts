@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { PDFDocument } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import nodemailer from "nodemailer";
 
 const supabase = createClient(
@@ -27,13 +27,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "RAMS not found" }, { status: 404 });
     }
 
-    // 2. Fetch template fields to know where to place signatures
-    const { data: fields, error: fieldsError } = await supabase
-      .from("template_signature_fields")
-      .select("*")
-      .eq("template_id", rams.template_id);
-
-    if (fieldsError) throw fieldsError;
+    // 2. We no longer need template fields because coordinates are stored directly on the signer.
 
     // 3. Download original PDF
     console.log(`Downloading PDF from path: "${rams.file_path}" in bucket: "rams"`);
@@ -48,11 +42,11 @@ export async function POST(req: NextRequest) {
 
     const pdfBytes = await pdfBlob.arrayBuffer();
     const pdfDoc = await PDFDocument.load(pdfBytes);
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
     // 4. Overlay signatures
-    for (const field of fields) {
-      const signer = rams.signers.find((s: any) => s.role_name === field.role_name);
-      if (signer && signer.signature_data) {
+    for (const signer of rams.signers) {
+      if (signer.signature_data && signer.placement_x != null && signer.page_number) {
         try {
           // Convert base64 signature to image
           const signatureImageBytes = Buffer.from(
@@ -62,15 +56,17 @@ export async function POST(req: NextRequest) {
           const signatureImage = await pdfDoc.embedPng(signatureImageBytes);
 
           const pages = pdfDoc.getPages();
-          const page = pages[field.page_number - 1];
+          const page = pages[signer.page_number - 1];
+          if (!page) continue;
+          
           const { width, height } = page.getSize();
 
           // Convert percentage coordinates to PDF points
           // placement_x/y are center points
-          const fieldWidth = (field.width / 100) * width;
-          const fieldHeight = (field.height / 100) * height;
-          const x = (field.placement_x / 100) * width - fieldWidth / 2;
-          const y = height - (field.placement_y / 100) * height - fieldHeight / 2;
+          const fieldWidth = (signer.width / 100) * width;
+          const fieldHeight = (signer.height / 100) * height;
+          const x = (signer.placement_x / 100) * width - fieldWidth / 2;
+          const y = height - (signer.placement_y / 100) * height - fieldHeight / 2;
 
           page.drawImage(signatureImage, {
             x,
@@ -79,7 +75,70 @@ export async function POST(req: NextRequest) {
             height: fieldHeight,
           });
         } catch (imgErr) {
-          console.error(`Error embedding signature for ${field.role_name}:`, imgErr);
+          console.error(`Error embedding signature for ${signer.role_name}:`, imgErr);
+        }
+      }
+
+      // 4b. Overlay Name Text
+      const nameToPrint = signer.name_text || signer.name;
+      if (nameToPrint && signer.name_placement_x != null && signer.name_page_number) {
+        try {
+          const pages = pdfDoc.getPages();
+          const page = pages[signer.name_page_number - 1];
+          if (page) {
+            const { width, height } = page.getSize();
+            const fieldWidth = (signer.name_width / 100) * width;
+            const fieldHeight = (signer.name_height / 100) * height;
+            const x = (signer.name_placement_x / 100) * width - fieldWidth / 2;
+            const y = height - (signer.name_placement_y / 100) * height - fieldHeight / 2;
+            
+            const fontSize = 10;
+            const textWidth = font.widthOfTextAtSize(nameToPrint, fontSize);
+            
+            page.drawText(nameToPrint, {
+                x: x + (fieldWidth - textWidth) / 2,
+                y: y + (fieldHeight - fontSize) / 2 + 2,
+                size: fontSize,
+                font,
+                color: rgb(0, 0, 0)
+            });
+          }
+        } catch (nameErr) {
+          console.error(`Error drawing name for ${signer.role_name}:`, nameErr);
+        }
+      }
+
+      // 4c. Overlay Date Text
+      if (signer.signed_at && signer.date_placement_x != null && signer.date_page_number) {
+        try {
+          const pages = pdfDoc.getPages();
+          const page = pages[signer.date_page_number - 1];
+          if (page) {
+            const dateObj = new Date(signer.signed_at);
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const year = String(dateObj.getFullYear()).slice(-2);
+            const dateText = `${day} ${month} ${year}`;
+
+            const { width, height } = page.getSize();
+            const fieldWidth = (signer.date_width / 100) * width;
+            const fieldHeight = (signer.date_height / 100) * height;
+            const x = (signer.date_placement_x / 100) * width - fieldWidth / 2;
+            const y = height - (signer.date_placement_y / 100) * height - fieldHeight / 2;
+            
+            const fontSize = 10;
+            const textWidth = font.widthOfTextAtSize(dateText, fontSize);
+            
+            page.drawText(dateText, {
+                x: x + (fieldWidth - textWidth) / 2,
+                y: y + (fieldHeight - fontSize) / 2 + 2,
+                size: fontSize,
+                font,
+                color: rgb(0, 0, 0)
+            });
+          }
+        } catch (dateErr) {
+          console.error(`Error drawing date for ${signer.role_name}:`, dateErr);
         }
       }
     }

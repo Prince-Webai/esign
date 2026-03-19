@@ -17,7 +17,6 @@ export async function POST(req: NextRequest) {
     const supabaseAdmin = getSupabaseAdmin();
     const formData = await req.formData();
     const file = formData.get('file') as File;
-    const templateId = formData.get('templateId') as string;
     const documentName = formData.get('documentName') as string;
     const jobId = formData.get('jobId') as string;
     const signersJson = formData.get('signers') as string;
@@ -39,11 +38,10 @@ export async function POST(req: NextRequest) {
       throw uploadError;
     }
 
-    // 2. Create Document record
+    // 2. Create Document record (template_id is now optional/null)
     const { data: docData, error: docError } = await supabaseAdmin
       .from('rams_documents')
       .insert([{
-        template_id: templateId,
         name: documentName,
         file_path: uploadData.path,
         servicem8_job_id: jobId,
@@ -57,14 +55,30 @@ export async function POST(req: NextRequest) {
       throw docError;
     }
 
-    // 3. Create Signers
+    // 3. Create Signers with inline coordinates
     const signerData = signers.map((s: any) => ({
       rams_id: docData.id,
       name: s.name,
       email: s.email,
       role_name: s.role_name,
       status: 'pending',
-      assigned_user_id: s.assigned_user_id || null
+      assigned_user_id: s.assigned_user_id || null,
+      placement_x: s.x,
+      placement_y: s.y,
+      width: s.width,
+      height: s.height,
+      page_number: s.page_number,
+      name_placement_x: s.name_x,
+      name_placement_y: s.name_y,
+      name_width: s.name_width,
+      name_height: s.name_height,
+      name_page_number: s.name_page_number,
+      name_text: s.name_text,
+      date_placement_x: s.date_x,
+      date_placement_y: s.date_y,
+      date_width: s.date_width,
+      date_height: s.date_height,
+      date_page_number: s.date_page_number
     }));
 
     const { error: signersError } = await supabaseAdmin

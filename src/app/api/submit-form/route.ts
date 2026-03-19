@@ -150,49 +150,50 @@ export async function POST(req: NextRequest) {
         });
         currentY -= 20;
 
-        if (field.type === 'image' && typeof val === 'string' && val.startsWith('data:image')) {
-            try {
-                const imageBytes = Uint8Array.from(atob(val.split(',')[1]), c => c.charCodeAt(0));
-                let image;
-                if (val.includes('image/png')) {
-                    image = await pdfDoc.embedPng(imageBytes);
-                } else {
-                    image = await pdfDoc.embedJpg(imageBytes);
-                }
+        if (field.type === 'image') {
+            const imageValues = Array.isArray(val) ? val : [val];
+            
+            for (const imgVal of imageValues) {
+                if (typeof imgVal !== 'string' || !imgVal.startsWith('data:image')) continue;
                 
-                const maxWidth = 480;
-                // Available vertical space on this page
-                const availableHeight = currentY - 50;
+                try {
+                    const imageBytes = Uint8Array.from(atob(imgVal.split(',')[1]), c => c.charCodeAt(0));
+                    let image;
+                    if (imgVal.includes('image/png')) {
+                        image = await pdfDoc.embedPng(imageBytes);
+                    } else {
+                        image = await pdfDoc.embedJpg(imageBytes);
+                    }
+                    
+                    const maxWidth = 480;
+                    const availableHeight = currentY - 50;
 
-                // Start with desired max size, then clamp to available space
-                let scale = Math.min(maxWidth / image.width, 280 / image.height, 1);
-                let dims = image.scale(scale);
+                    let scale = Math.min(maxWidth / image.width, 280 / image.height, 1);
+                    let dims = image.scale(scale);
 
-                // If even at this scale it doesn't fit, scale further to available height
-                if (dims.height > availableHeight && availableHeight > 80) {
-                    scale = availableHeight / image.height;
-                    // Also enforce max width
-                    if (image.width * scale > maxWidth) scale = maxWidth / image.width;
-                    dims = image.scale(scale);
+                    if (dims.height > availableHeight && availableHeight > 80) {
+                        scale = availableHeight / image.height;
+                        if (image.width * scale > maxWidth) scale = maxWidth / image.width;
+                        dims = image.scale(scale);
+                    }
+
+                    if (availableHeight < 80) {
+                        page = pdfDoc.addPage([600, 800]);
+                        currentY = 750;
+                        dims = image.scale(Math.min(maxWidth / image.width, 280 / image.height, 1));
+                    }
+
+                    page.drawImage(image, {
+                        x: 50,
+                        y: currentY - dims.height,
+                        width: dims.width,
+                        height: dims.height,
+                    });
+                    currentY -= dims.height + 20;
+                } catch (e) {
+                    page.drawText("[Image processing failed]", { x: 70, y: currentY, size: 10, font: regularFont, color: rgb(0.8, 0, 0) });
+                    currentY -= 20;
                 }
-
-                // Only go to new page if there's genuinely no usable space (< 80px)
-                if (availableHeight < 80) {
-                    page = pdfDoc.addPage([600, 800]);
-                    currentY = 750;
-                    dims = image.scale(Math.min(maxWidth / image.width, 280 / image.height, 1));
-                }
-
-                page.drawImage(image, {
-                    x: 50,
-                    y: currentY - dims.height,
-                    width: dims.width,
-                    height: dims.height,
-                });
-                currentY -= dims.height + 20;
-            } catch (e) {
-                page.drawText("[Image processing failed]", { x: 70, y: currentY, size: 10, font: regularFont, color: rgb(0.8, 0, 0) });
-                currentY -= 20;
             }
         } else {
             // Text values

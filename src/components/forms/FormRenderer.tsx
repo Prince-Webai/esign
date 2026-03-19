@@ -117,21 +117,66 @@ export function FormRenderer({ formId }: { formId: string }) {
                   </div>
                 )}
                 {field.type === 'image' && (
-                  <div className="space-y-4">
-                     {formData[field.id] ? (
-                       <div className="relative w-full aspect-video rounded-3xl overflow-hidden border border-emerald-100 shadow-lg">
-                          <img src={formData[field.id]} alt="Preview" className="w-full h-full object-cover" />
-                          <button type="button" onClick={() => handleInputChange(field.id, null)} className="absolute top-4 right-4 p-3 bg-white/90 backdrop-blur shadow-xl rounded-2xl text-red-500 hover:bg-red-500 hover:text-white transition-all transform hover:rotate-90"><X className="w-5 h-5" /></button>
-                       </div>
-                     ) : (
-                      <label className={cn("flex flex-col items-center justify-center w-full h-56 bg-slate-50 border-2 border-dashed rounded-[40px] cursor-pointer hover:bg-emerald-50 hover:border-emerald-300 transition-all shadow-sm", errors[field.id] ? "border-red-300 bg-red-50" : "border-slate-200")}>
-                        <div className="flex flex-col items-center justify-center p-8 text-center space-y-4">
-                          <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center text-slate-300 shadow-md"><Upload className="w-6 h-6" /></div>
-                          <div className="space-y-1.5"><p className="text-[12px] font-black text-slate-900 uppercase tracking-[0.1em]">Transmit Image Artifact</p><p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">High resolution PNG, JPG acceptable</p></div>
-                        </div>
-                        <input type="file" className="hidden" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (file) { const reader = new FileReader(); reader.onloadend = () => handleInputChange(field.id, reader.result); reader.readAsDataURL(file); } }} />
-                      </label>
-                     )}
+                  <div className="space-y-6">
+                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {(formData[field.id] || []).map((imgData: string, idx: number) => (
+                           <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden border border-emerald-100 shadow-sm animate-in zoom-in duration-300">
+                              <img src={imgData} alt="Preview" className="w-full h-full object-cover" />
+                              <button 
+                                type="button" 
+                                onClick={() => {
+                                   const current = [...(formData[field.id] || [])];
+                                   current.splice(idx, 1);
+                                   handleInputChange(field.id, current.length > 0 ? current : null);
+                                }} 
+                                className="absolute top-2 right-2 p-1.5 bg-white/90 backdrop-blur shadow-md rounded-lg text-red-500 hover:bg-red-500 hover:text-white transition-all transform hover:scale-110"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                           </div>
+                        ))}
+                        
+                        {(!formData[field.id] || formData[field.id].length < 10) && (
+                          <label className={cn(
+                            "flex flex-col items-center justify-center aspect-square bg-slate-50 border-2 border-dashed rounded-2xl cursor-pointer hover:bg-emerald-50 hover:border-emerald-300 transition-all shadow-sm",
+                            errors[field.id] ? "border-red-300 bg-red-50" : "border-slate-200"
+                          )}>
+                            <div className="flex flex-col items-center justify-center text-center p-4">
+                               <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-slate-300 shadow-sm mb-3">
+                                  <Upload className="w-5 h-5" />
+                               </div>
+                               <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Upload Image</p>
+                               <p className="text-[8px] text-slate-400 font-bold uppercase tracking-tighter mt-1">
+                                  {formData[field.id]?.length || 0} / 10 MAX
+                               </p>
+                            </div>
+                            <input 
+                              type="file" 
+                              className="hidden" 
+                              accept="image/*" 
+                              multiple 
+                              onChange={(e) => {
+                                const files = Array.from(e.target.files || []);
+                                const currentCount = (formData[field.id] || []).length;
+                                const remaining = 10 - currentCount;
+                                const toUpload = files.slice(0, remaining);
+
+                                toUpload.forEach(file => {
+                                  const reader = new FileReader();
+                                  reader.onloadend = () => {
+                                    setFormData(prev => {
+                                      const existing = prev[field.id] || [];
+                                      if (existing.length >= 10) return prev;
+                                      return { ...prev, [field.id]: [...existing, reader.result] };
+                                    });
+                                  };
+                                  reader.readAsDataURL(file);
+                                });
+                              }} 
+                            />
+                          </label>
+                        )}
+                     </div>
                   </div>
                 )}
                 {errors[field.id] && <p className="text-[10px] font-black uppercase tracking-[0.2em] text-red-500 pl-4 animate-in fade-in duration-300">{errors[field.id]}</p>}
