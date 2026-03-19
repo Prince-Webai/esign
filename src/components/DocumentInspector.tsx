@@ -177,30 +177,25 @@ export function DocumentInspector({ ramsId }: { ramsId: string }) {
                   />
                   
                   {/* Per-Page Signatures Overlay */}
-                  {fields.filter(f => f.page_number === pageNum).map((field) => {
-                    const signerForField = allSigners.find(s => s.role_name === field.role_name);
-                    if (!signerForField?.signature_data) return null;
-
-                    return (
-                      <div
-                        key={field.role_name}
-                        style={{
-                          position: 'absolute',
-                          left: `${field.placement_x}%`,
-                          top: `${field.placement_y}%`,
-                          width: `${field.width}%`,
-                          height: `${field.height}%`,
-                          transform: 'translate(-50%, -50%)'
-                        }}
-                        className="animate-in fade-in zoom-in duration-500"
-                      >
-                        <img 
-                          src={signerForField.signature_data} 
-                          className="w-full h-full object-contain mix-blend-multiply" 
-                        />
-                      </div>
-                    );
-                  })}
+                  {allSigners.filter(s => s.page_number === pageNum && s.signature_data).map((signer) => (
+                    <div
+                      key={signer.id}
+                      style={{
+                        position: 'absolute',
+                        left: `${signer.placement_x}%`,
+                        top: `${signer.placement_y}%`,
+                        width: `${signer.width}%`,
+                        height: `${signer.height}%`,
+                        transform: 'translate(-50%, -50%)'
+                      }}
+                      className="animate-in fade-in zoom-in duration-500"
+                    >
+                      <img 
+                        src={signer.signature_data} 
+                        className="w-full h-full object-contain mix-blend-multiply" 
+                      />
+                    </div>
+                  ))}
                 </div>
               );
             })}

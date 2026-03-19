@@ -344,51 +344,23 @@ export function RAMSLauncher() {
     if (!file || signers.length === 0) return;
     setIsUploading(true);
 
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('documentName', documentName || file.name);
+    formData.append('jobId', jobId);
+    formData.append('signers', JSON.stringify(signers));
+
     try {
-      const fileName = `${Date.now()}-${file.name.replace(/\s/g, "_")}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("rams")
-        .upload(fileName, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: ramsDoc, error: ramsError } = await supabase
-        .from("rams_documents")
-        .insert({
-          servicem8_job_id: jobId,
-          name: documentName || file.name,
-          file_path: fileName,
-          status: "pending"
-        })
-        .select()
-        .single();
-
-      if (ramsError) throw ramsError;
-
-      const signersWithRams = signers.map(s => ({
-        rams_id: ramsDoc.id,
-        role_name: s.role_name,
-        name: s.name,
-        email: s.email,
-        assigned_user_id: s.assigned_user_id || null,
-        placement_x: s.x,
-        placement_y: s.y,
-        width: s.width,
-        height: s.height,
-        page_number: s.page_number
-      }));
-
-      const { error: signersError } = await supabase.from("signers").insert(signersWithRams);
-      if (signersError) throw signersError;
-
-      fetch('/api/launch-rams', {
-         method: 'POST',
-         headers: { 'Content-Type': 'application/json' },
-         body: JSON.stringify({ ramsId: ramsDoc.id })
+      const response = await fetch('/api/launch-rams', {
+        method: 'POST',
+        body: formData
       });
 
+      const result = await response.json();
+      if (!result.success) throw new Error(result.error);
+
       alert("RAMS Published! Emails are being dispatched.");
-      window.location.href = "/dashboard";
+      window.location.href = "/";
     } catch (error: any) {
       console.error(error);
       alert(error.message || "Error publishing RAMS");
