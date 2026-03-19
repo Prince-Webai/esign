@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { sendSigningEmail } from '@/lib/email';
 
 const getSupabaseAdmin = () => {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -88,17 +89,12 @@ export async function POST(req: NextRequest) {
     if (createdSigners) {
       const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/$/, '');
       for (const s of createdSigners) {
-        // We can just call the existing send-email logic or keep it simple here
-        await fetch(`${baseUrl}/api/send-email`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: s.email,
-            name: s.name,
-            documentName: docData.name,
-            token: s.token
-          })
-        });
+        const signingLink = `${baseUrl}/sign/${s.token}`;
+        try {
+          await sendSigningEmail(s.email, s.name, docData.name, signingLink);
+        } catch (emailErr) {
+          console.error(`Failed to send email to ${s.email}:`, emailErr);
+        }
       }
     }
 
