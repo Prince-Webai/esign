@@ -177,7 +177,7 @@ export function DocumentInspector({ ramsId }: { ramsId: string }) {
                   />
                   
                   {/* Per-Page Signatures Overlay */}
-                  {allSigners.filter(s => s.page_number === pageNum && s.signature_data).map((signer) => (
+                  {allSigners.filter(s => s.page_number === pageNum).map((signer) => (
                     <div
                       key={signer.id}
                       style={{
@@ -188,12 +188,28 @@ export function DocumentInspector({ ramsId }: { ramsId: string }) {
                         height: `${signer.height}%`,
                         transform: 'translate(-50%, -50%)'
                       }}
-                      className="animate-in fade-in zoom-in duration-500"
+                      className={cn(
+                        "animate-in fade-in zoom-in duration-500 flex items-center justify-center border-2 transition-all",
+                        signer.signature_data 
+                          ? "border-transparent" 
+                          : "border-emerald-500/50 bg-emerald-500/5 rounded-lg border-dashed"
+                      )}
                     >
-                      <img 
-                        src={signer.signature_data} 
-                        className="w-full h-full object-contain mix-blend-multiply" 
-                      />
+                      {signer.signature_data ? (
+                        <img 
+                          src={signer.signature_data} 
+                          className="w-full h-full object-contain mix-blend-multiply" 
+                        />
+                      ) : (
+                        <div className="absolute -top-6 left-0 bg-emerald-500 text-white text-[9px] font-black px-2 py-0.5 rounded-t-md uppercase tracking-widest whitespace-nowrap shadow-sm">
+                           {signer.name || `Signer`}
+                        </div>
+                      )}
+                      {!signer.signature_data && (
+                        <div className="text-[8px] font-bold text-emerald-600/40 uppercase text-center px-1">
+                          {signer.role_name}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
