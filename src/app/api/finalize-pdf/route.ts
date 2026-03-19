@@ -65,8 +65,8 @@ export async function POST(req: NextRequest) {
           // placement_x/y are center points
           const fieldWidth = (signer.width / 100) * width;
           const fieldHeight = (signer.height / 100) * height;
-          const x = (signer.placement_x / 100) * width - fieldWidth / 2;
-          const y = height - (signer.placement_y / 100) * height - fieldHeight / 2;
+          const x = (signer.placement_x / 100) * width;
+          const y = height - (signer.placement_y / 100) * height - fieldHeight;
 
           page.drawImage(signatureImage, {
             x,
@@ -89,8 +89,8 @@ export async function POST(req: NextRequest) {
             const { width, height } = page.getSize();
             const fieldWidth = (signer.name_width / 100) * width;
             const fieldHeight = (signer.name_height / 100) * height;
-            const x = (signer.name_placement_x / 100) * width - fieldWidth / 2;
-            const y = height - (signer.name_placement_y / 100) * height - fieldHeight / 2;
+            const x = (signer.name_placement_x / 100) * width;
+            const y = height - (signer.name_placement_y / 100) * height - fieldHeight;
             
             const fontSize = 10;
             const textWidth = font.widthOfTextAtSize(nameToPrint, fontSize);
@@ -123,8 +123,8 @@ export async function POST(req: NextRequest) {
             const { width, height } = page.getSize();
             const fieldWidth = (signer.date_width / 100) * width;
             const fieldHeight = (signer.date_height / 100) * height;
-            const x = (signer.date_placement_x / 100) * width - fieldWidth / 2;
-            const y = height - (signer.date_placement_y / 100) * height - fieldHeight / 2;
+            const x = (signer.date_placement_x / 100) * width;
+            const y = height - (signer.date_placement_y / 100) * height - fieldHeight;
             
             const fontSize = 10;
             const textWidth = font.widthOfTextAtSize(dateText, fontSize);

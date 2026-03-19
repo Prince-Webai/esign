@@ -347,8 +347,8 @@ export default function SigningPage({ token }: { token: string }) {
                     <div
                       style={{
                         position: 'absolute',
-                        left: `${currentRoleField.placement_x}%`,
-                        top: `${currentRoleField.placement_y}%`,
+                        left: `${currentRoleField.placement_x + (currentRoleField.width / 2)}%`,
+                        top: `${currentRoleField.placement_y + (currentRoleField.height / 2)}%`,
                         transform: 'translate(-50%, -50%)'
                       }}
                       className="flex flex-col items-center gap-2 animate-bounce cursor-pointer z-20"

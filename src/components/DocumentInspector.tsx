@@ -186,7 +186,6 @@ export function DocumentInspector({ ramsId }: { ramsId: string }) {
                         top: `${signer.placement_y}%`,
                         width: `${signer.width}%`,
                         height: `${signer.height}%`,
-                        transform: 'translate(-50%, -50%)'
                       }}
                       className={cn(
                         "animate-in fade-in zoom-in duration-500 flex items-center justify-center border-2 transition-all",
