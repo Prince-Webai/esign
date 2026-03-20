@@ -41,8 +41,9 @@ export function FormResponses({ formId }: { formId: string }) {
       const res = await fetch("/api/submit-form", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ submissionId: sub.id, formId, data: sub.data })
+        body: JSON.stringify({ submissionId: sub.id, formId, data: sub.data, isRegeneration: true })
       });
+
       const result = await res.json();
       if (result.success) { fetchData(); }
       else { alert("PDF regeneration failed: " + result.error); }

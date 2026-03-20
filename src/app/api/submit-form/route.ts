@@ -12,7 +12,8 @@ function getAdminClient() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { submissionId, formId, data } = await req.json();
+    const { submissionId, formId, data, isRegeneration } = await req.json();
+
     const supabase = getAdminClient();
 
     // 1. Fetch form config
@@ -245,8 +246,9 @@ export async function POST(req: NextRequest) {
     // 6. Update submission record
     await supabase.from('form_submissions').update({ pdf_url: publicUrl, status: 'completed' }).eq('id', submissionId);
 
-    // 7. Trigger Webhook
-    if (form.webhook_url) {
+    // 7. Trigger Webhook (Skip if this is just a PDF regeneration)
+    if (form.webhook_url && !isRegeneration) {
+
       const humanReadableData: Record<string, any> = {};
       if (fields) {
         for (const field of fields) {
