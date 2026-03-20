@@ -76,22 +76,27 @@ export async function POST(req: NextRequest) {
     // Actually pdf-lib draws in order, so we should have drawn the rectangle first.
     // I'll reposition the draw calls to be correct.
     
-    // RE-DRAWING LOGIC:
-    // 1. Draw Rect
+    // RE-DRAWING LOGIC (Actually drawing on the green bar):
     page.drawRectangle({ x: 0, y: headerBottomBorder, width, height: actualHeaderHeight, color: rgb(0.02, 0.59, 0.41) });
-    // 2. Clear then Draw Logo
     if (logoImage && logoDims) {
       page.drawImage(logoImage, { x: 50, y: height - 50 - logoDims.height / 2, width: logoDims.width, height: logoDims.height });
     }
-    // 3. Draw Text over Rect
     page.drawText(headerTitle, { x: textLeft, y: height - 42, size: 20, font, color: rgb(1, 1, 1) });
+    // This second call effectively draws the title in white over the green bar
     drawWrappedText(page, formName, textLeft, height - 68, 12, regularFont, headerMaxWidth, 16, rgb(0.8, 0.9, 0.8));
 
     let currentY = headerBottomBorder - 40;
     page.drawText(`Submission ID: ${submissionId}`, { x: 50, y: currentY, size: 10, font: regularFont, color: rgb(0.4, 0.4, 0.4) });
     currentY -= 15;
     page.drawText(`Timestamp: ${new Date().toLocaleString()}`, { x: 50, y: currentY, size: 10, font: regularFont, color: rgb(0.4, 0.4, 0.4) });
-    currentY -= 40;
+    currentY -= 20;
+
+    if (form.description) {
+      currentY = drawWrappedText(page, form.description, 50, currentY, 10, regularFont, 500, 14, rgb(0.4, 0.4, 0.4));
+      currentY -= 15;
+    }
+    currentY -= 20;
+
 
 
     // 4. Draw form fields — images processed in parallel first
