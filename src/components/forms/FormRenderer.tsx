@@ -115,24 +115,35 @@ export function FormRenderer({ formId }: { formId: string }) {
                 <label className="flex items-center gap-2"><span className="text-[12px] font-black uppercase tracking-[0.2em] text-slate-600 group-focus-within:text-emerald-600 transition-colors">{field.label}</span>{field.required && <span className="text-red-500 font-bold">•</span>}</label>
                 {field.type === 'input' && <input type="text" placeholder={field.placeholder} className={cn("w-full bg-white border border-slate-200 rounded-2xl px-6 py-5 text-slate-900 outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/30 transition-all placeholder:text-slate-300 shadow-sm", errors[field.id] && "border-red-300 bg-red-50 focus:border-red-500/30 focus:ring-red-500/10")} value={formData[field.id] || ""} onChange={(e) => handleInputChange(field.id, e.target.value)} />}
                 {field.type === 'textarea' && <textarea placeholder={field.placeholder} className={cn("w-full bg-white border border-slate-200 rounded-2xl px-6 py-5 text-slate-900 outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/30 transition-all placeholder:text-slate-300 h-44 shadow-sm resize-none", errors[field.id] && "border-red-300 bg-red-50 focus:border-red-500/30 focus:ring-red-500/10")} value={formData[field.id] || ""} onChange={(e) => handleInputChange(field.id, e.target.value)} />}
+                {field.type === 'date' && <input type="date" className={cn("w-full bg-white border border-slate-200 rounded-2xl px-6 py-5 text-slate-900 outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/30 transition-all shadow-sm cursor-pointer", errors[field.id] && "border-red-300 bg-red-50 focus:border-red-500/30 focus:ring-red-500/10")} value={formData[field.id] || ""} onChange={(e) => handleInputChange(field.id, e.target.value)} />}
                 {field.type === 'select' && (
-                  <div className="relative">
-                    <select className={cn("w-full bg-white border border-slate-200 rounded-2xl px-6 py-5 text-slate-900 outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/30 appearance-none transition-all cursor-pointer shadow-sm", errors[field.id] && "border-red-300 bg-red-50 focus:border-red-500/30 focus:ring-red-500/10")} value={formData[field.id] || ""} onChange={(e) => handleInputChange(field.id, e.target.value)}>
-                      <option value="" disabled>{field.placeholder || "Select Parameter..."}</option>
-                      {field.options?.map((opt, i) => <option key={i} value={opt}>{opt}</option>)}
-                    </select>
-                    <ChevronRight className="absolute right-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 rotate-90 pointer-events-none" />
+                  <div className="space-y-3">
+                    <div className="relative">
+                      <select className={cn("w-full bg-white border border-slate-200 rounded-2xl px-6 py-5 text-slate-900 outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/30 appearance-none transition-all cursor-pointer shadow-sm", errors[field.id] && "border-red-300 bg-red-50 focus:border-red-500/30 focus:ring-red-500/10")} value={formData[field.id] || ""} onChange={(e) => handleInputChange(field.id, e.target.value)}>
+                        <option value="" disabled>{field.placeholder || "Select Parameter..."}</option>
+                        {field.options?.map((opt, i) => <option key={i} value={opt}>{opt}</option>)}
+                      </select>
+                      <ChevronRight className="absolute right-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 rotate-90 pointer-events-none" />
+                    </div>
+                    {formData[field.id] === 'Other' && (
+                      <input type="text" placeholder="Please specify..." className="w-full bg-white border border-slate-200 rounded-2xl px-6 py-4 text-slate-900 outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/30 transition-all placeholder:text-slate-300 shadow-sm animate-in fade-in slide-in-from-top-1 duration-200" value={formData[`${field.id}_other`] || ""} onChange={(e) => handleInputChange(`${field.id}_other`, e.target.value)} />
+                    )}
                   </div>
                 )}
                 {field.type === 'radio' && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {field.options?.map((opt, i) => (
-                      <label key={i} className={cn("flex items-center gap-4 p-5 rounded-2xl border transition-all cursor-pointer group/radio", formData[field.id] === opt ? "bg-emerald-50 border-emerald-500 shadow-md shadow-emerald-500/5 text-slate-900" : (errors[field.id] ? "bg-red-50 border-red-200 text-red-700" : "bg-white border-slate-200 text-slate-500 hover:border-emerald-200 shadow-sm"))}>
-                        <input type="radio" name={field.id} value={opt} checked={formData[field.id] === opt} onChange={(e) => handleInputChange(field.id, e.target.value)} className="hidden" />
-                        <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all shrink-0", formData[field.id] === opt ? "border-emerald-500 bg-white" : (errors[field.id] ? "border-red-400 bg-white" : "border-slate-200 shadow-inner bg-white"))}>{formData[field.id] === opt && <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm" />}</div>
-                        <span className="font-bold text-[13px] tracking-tight">{opt}</span>
-                      </label>
-                    ))}
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {field.options?.map((opt, i) => (
+                        <label key={i} className={cn("flex items-center gap-4 p-5 rounded-2xl border transition-all cursor-pointer group/radio", formData[field.id] === opt ? "bg-emerald-50 border-emerald-500 shadow-md shadow-emerald-500/5 text-slate-900" : (errors[field.id] ? "bg-red-50 border-red-200 text-red-700" : "bg-white border-slate-200 text-slate-500 hover:border-emerald-200 shadow-sm"))}>
+                          <input type="radio" name={field.id} value={opt} checked={formData[field.id] === opt} onChange={(e) => handleInputChange(field.id, e.target.value)} className="hidden" />
+                          <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all shrink-0", formData[field.id] === opt ? "border-emerald-500 bg-white" : (errors[field.id] ? "border-red-400 bg-white" : "border-slate-200 shadow-inner bg-white"))}>{formData[field.id] === opt && <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm" />}</div>
+                          <span className="font-bold text-[13px] tracking-tight">{opt}</span>
+                        </label>
+                      ))}
+                    </div>
+                    {formData[field.id] === 'Other' && (
+                      <input type="text" placeholder="Please specify..." className="w-full bg-white border border-slate-200 rounded-2xl px-6 py-4 text-slate-900 outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/30 transition-all placeholder:text-slate-300 shadow-sm animate-in fade-in slide-in-from-top-1 duration-200" value={formData[`${field.id}_other`] || ""} onChange={(e) => handleInputChange(`${field.id}_other`, e.target.value)} />
+                    )}
                   </div>
                 )}
                 {field.type === 'image' && (
