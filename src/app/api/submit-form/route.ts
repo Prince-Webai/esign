@@ -130,62 +130,49 @@ export async function POST(req: NextRequest) {
       // Wait for all images to be embedded in parallel
       await Promise.all(imageEmbedPromises);
 
+      // Helper to check for enough vertical space and add a page if needed
+      const checkPage = (needed: number) => {
+        if (currentY - needed < 50) {
+          page = pdfDoc.addPage([600, 800]);
+          currentY = 750;
+          return true;
+        }
+        return false;
+      };
+
       // Now draw everything in order
       for (const field of fields) {
         if (field.type === 'header') {
+          currentY -= 30;
+          checkPage(40);
+          page.drawLine({ start: { x: 50, y: currentY + 10 }, end: { x: 550, y: currentY + 10 }, thickness: 2, color: rgb(0.1, 0.1, 0.1) });
+          currentY = drawWrappedText(page, field.label.toUpperCase(), 50, currentY, 14, font, 500, 18, rgb(0, 0, 0));
           currentY -= 20;
-          if (currentY < 100) { page = pdfDoc.addPage([600, 800]); currentY = 750; }
-          page.drawLine({ start: { x: 50, y: currentY }, end: { x: 550, y: currentY }, thickness: 2, color: rgb(0.1, 0.1, 0.1) });
-          currentY -= 25;
-          page.drawText(field.label.toUpperCase(), { x: 50, y: currentY, size: 14, font, color: rgb(0, 0, 0) });
-          currentY -= 40;
           continue;
         }
 
         const val = data[field.id];
         if (val === undefined || val === null || val === '') continue;
-        if (currentY < 80) { page = pdfDoc.addPage([600, 800]); currentY = 750; }
-
-        page.drawText(field.label.toUpperCase(), { x: 50, y: currentY, size: 10, font, color: rgb(0, 0, 0) });
-        currentY -= 20;
+        
+        // Ensure there is space for the label before drawing it
+        checkPage(40);
+        currentY = drawWrappedText(page, field.label.toUpperCase(), 50, currentY, 10, font, 500, 14, rgb(0, 0, 0));
+        currentY -= 8;
 
         if (field.type === 'image') {
           const imageValues = Array.isArray(val) ? val : [val];
           for (let i = 0; i < imageValues.length; i++) {
-            const cacheKey = `${field.id}_${i}`;
-            const cached = imageCache[cacheKey];
-            if (!cached) {
-              page.drawText('[Image processing failed]', { x: 70, y: currentY, size: 10, font: regularFont, color: rgb(0.8, 0, 0) });
-              currentY -= 20;
-              continue;
-            }
+            const cached = imageCache[`${field.id}_${i}`];
+            if (!cached) continue;
             const { image, dims } = cached;
-            if (currentY - dims.height < 50) { page = pdfDoc.addPage([600, 800]); currentY = 750; }
+            checkPage(dims.height + 20);
             page.drawImage(image, { x: 50, y: currentY - dims.height, width: dims.width, height: dims.height });
             currentY -= dims.height + 20;
           }
         } else {
-          const textLines = String(val).split('\n');
-          for (const line of textLines) {
-            const words = line.split(' ');
-            let currentLine = '';
-            for (const word of words) {
-              const testLine = currentLine + word + ' ';
-              if (regularFont.widthOfTextAtSize(testLine, 12) > 450 && currentLine !== '') {
-                if (currentY < 50) { page = pdfDoc.addPage([600, 800]); currentY = 750; }
-                page.drawText(currentLine, { x: 70, y: currentY, size: 12, font: regularFont, color: rgb(0.2, 0.2, 0.2) });
-                currentY -= 18;
-                currentLine = word + ' ';
-              } else {
-                currentLine = testLine;
-              }
-            }
-            if (currentLine.trim()) {
-              if (currentY < 50) { page = pdfDoc.addPage([600, 800]); currentY = 750; }
-              page.drawText(currentLine, { x: 70, y: currentY, size: 12, font: regularFont, color: rgb(0.2, 0.2, 0.2) });
-              currentY -= 18;
-            }
-          }
+          // Draw Value (Wrapped)
+          const textVal = String(val);
+          currentY = drawWrappedText(page, textVal, 70, currentY, 12, regularFont, 480, 16, rgb(0.2, 0.2, 0.2));
           currentY -= 15;
         }
       }
@@ -253,3 +240,28 @@ async function compressBase64Image(base64: string, maxWidth: number, quality: nu
     return base64;
   }
 }
+
+function drawWrappedText(page: any, text: string, x: number, y: number, size: number, font: any, maxWidth: number, lineHeight: number, color: any): number {
+  if (!text) return y;
+  const words = text.split(' ');
+  let currentLine = '';
+  let curY = y;
+
+  for (const word of words) {
+    const testLine = currentLine + word + ' ';
+    const testWidth = font.widthOfTextAtSize(testLine, size);
+    if (testWidth > maxWidth && currentLine !== '') {
+      page.drawText(currentLine.trim(), { x, y: curY, size, font, color });
+      curY -= lineHeight;
+      currentLine = word + ' ';
+    } else {
+      currentLine = testLine;
+    }
+  }
+  if (currentLine.trim()) {
+    page.drawText(currentLine.trim(), { x, y: curY, size, font, color });
+    curY -= lineHeight;
+  }
+  return curY;
+}
+
