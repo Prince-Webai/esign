@@ -51,13 +51,32 @@ export function FormRenderer({ formId }: { formId: string }) {
     if (!validate()) return;
     setSubmitting(true);
     try {
-      const { data: submission, error: subError } = await supabase.from("form_submissions").insert([{ form_id: formId, data: formData }]).select().single();
+      // 1. Save submission record to DB immediately
+      const { data: submission, error: subError } = await supabase
+        .from("form_submissions")
+        .insert([{ form_id: formId, data: formData }])
+        .select()
+        .single();
       if (subError) throw subError;
-      await fetch("/api/submit-form", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ submissionId: submission.id, formId: formId, data: formData }) });
+
+      // 2. Show success immediately — don't wait for PDF
       setSubmitted(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (error: any) { alert("Submission error: " + error.message); } finally { setSubmitting(false); }
+
+      // 3. Fire PDF generation in background (no await)
+      fetch("/api/submit-form", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ submissionId: submission.id, formId: formId, data: formData }),
+      }).catch(err => console.error("Background PDF generation error:", err));
+
+    } catch (error: any) {
+      alert("Submission error: " + error.message);
+    } finally {
+      setSubmitting(false);
+    }
   };
+
 
   if (loading) return <div className="flex flex-col items-center justify-center py-32 space-y-4"><Loader2 className="w-12 h-12 text-emerald-600 animate-spin" /><p className="text-slate-400 font-bold tracking-widest uppercase text-xs">Initiating Secure Handshake...</p></div>;
   if (!form) return <div className="text-center py-32 text-slate-400 font-bold uppercase tracking-widest">Form Not Discovered</div>;
