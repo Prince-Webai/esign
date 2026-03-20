@@ -15,7 +15,7 @@ if (!supabaseUrl || !supabaseServiceRoleKey) {
 const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
 async function ensureBuckets() {
-  const buckets = ['templates', 'rams'];
+  const buckets = ['templates', 'rams', 'form-submissions'];
   
   for (const bucketName of buckets) {
     console.log(`Checking bucket: ${bucketName}...`);

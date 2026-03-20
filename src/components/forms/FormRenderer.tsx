@@ -46,28 +46,71 @@ export function FormRenderer({ formId }: { formId: string }) {
     return Object.keys(newErrors).length === 0;
   };
 
+  async function uploadImage(base64: string, id: string) {
+    try {
+      if (!base64.startsWith('data:image')) return base64;
+      const byteString = atob(base64.split(',')[1]);
+      const mimeString = base64.split(',')[0].split(':')[1].split(';')[0];
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i++) { ia[i] = byteString.charCodeAt(i); }
+      const blob = new Blob([ab], { type: mimeString });
+      const fileName = `${id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${mimeString.split('/')[1]}`;
+      const { error: uploadError } = await supabase.storage.from("form-submissions").upload(fileName, blob);
+      if (uploadError) throw uploadError;
+      const { data: { publicUrl } } = supabase.storage.from("form-submissions").getPublicUrl(fileName);
+      return publicUrl;
+    } catch (err) {
+      console.error("Image upload failed:", err);
+      return base64; // fall back to base64 if upload fails
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
     setSubmitting(true);
     try {
-      // 1. Save submission record to DB immediately
+      const finalData = { ...formData };
+      
+      // 1. Scan for images and upload to Storage first
+      const imageUploadPromises: Promise<any>[] = [];
+      fields.forEach(field => {
+        if (field.type === 'image' && Array.isArray(finalData[field.id])) {
+          const images = finalData[field.id];
+          images.forEach((img: string, idx: number) => {
+            if (img.startsWith('data:image')) {
+              imageUploadPromises.push(
+                uploadImage(img, formId).then(url => {
+                  finalData[field.id][idx] = url;
+                })
+              );
+            }
+          });
+        }
+      });
+
+      if (imageUploadPromises.length > 0) {
+        await Promise.all(imageUploadPromises);
+      }
+
+      // 2. Save submission record to DB with URLs (tiny payload)
       const { data: submission, error: subError } = await supabase
         .from("form_submissions")
-        .insert([{ form_id: formId, data: formData }])
+        .insert([{ form_id: formId, data: finalData }])
         .select()
         .single();
       if (subError) throw subError;
 
-      // 2. Show success immediately — don't wait for PDF
+      // 3. Show success immediately
       setSubmitted(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
-      // 3. Fire PDF generation in background (no await)
+      // 4. Fire PDF generation in background (passing the finalData with URLs)
       fetch("/api/submit-form", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ submissionId: submission.id, formId: formId, data: formData }),
+        body: JSON.stringify({ submissionId: submission.id, formId: formId, data: finalData }),
       }).catch(err => console.error("Background PDF generation error:", err));
 
     } catch (error: any) {
@@ -76,6 +119,7 @@ export function FormRenderer({ formId }: { formId: string }) {
       setSubmitting(false);
     }
   };
+
 
 
   if (loading) return <div className="flex flex-col items-center justify-center py-32 space-y-4"><Loader2 className="w-12 h-12 text-emerald-600 animate-spin" /><p className="text-slate-400 font-bold tracking-widest uppercase text-xs">Initiating Secure Handshake...</p></div>;

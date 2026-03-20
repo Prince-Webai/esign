@@ -92,20 +92,38 @@ export async function POST(req: NextRequest) {
           imageEmbedPromises.push(
             (async () => {
               try {
-                // Resize/compress: cap at 800px wide JPEG quality 70 before embedding
-                const compressed = await compressBase64Image(imgVal, 800, 0.7);
-                const imageBytes = Uint8Array.from(atob(compressed.split(',')[1]), c => c.charCodeAt(0));
-                const image = compressed.includes('image/png')
+                let imageBytes: Uint8Array;
+                let isPng = false;
+
+                if (typeof imgVal === 'string' && imgVal.startsWith('http')) {
+                  // Fetch from URL (New Storage-based flow)
+                  const res = await fetch(imgVal);
+                  const buffer = await res.arrayBuffer();
+                  imageBytes = new Uint8Array(buffer);
+                  isPng = imgVal.toLowerCase().includes('.png');
+                } else if (typeof imgVal === 'string' && imgVal.startsWith('data:image')) {
+                  // Process from base64 (Old fallback flow)
+                  const compressed = await compressBase64Image(imgVal, 800, 0.7);
+                  imageBytes = Uint8Array.from(atob(compressed.split(',')[1]), c => c.charCodeAt(0));
+                  isPng = compressed.includes('image/png');
+                } else {
+                  return;
+                }
+
+                const image = isPng
                   ? await pdfDoc.embedPng(imageBytes)
                   : await pdfDoc.embedJpg(imageBytes);
+                
                 const maxWidth = 480;
                 const scale = Math.min(maxWidth / image.width, 260 / image.height, 1);
                 imageCache[cacheKey] = { image, dims: image.scale(scale) };
-              } catch {
+              } catch (err) {
+                console.error(`Failed to embed image ${cacheKey}:`, err);
                 imageCache[cacheKey] = null;
               }
             })()
           );
+
         }
       }
 
