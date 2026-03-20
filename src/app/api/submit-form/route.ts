@@ -37,40 +37,62 @@ export async function POST(req: NextRequest) {
     const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
     const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-    // Header
-    page.drawRectangle({ x: 0, y: height - 100, width, height: 100, color: rgb(0.02, 0.59, 0.41) });
-
-    let logoWidthOffset = 0;
+    // Calculate Dynamic Header Height
+    const headerLeft = 50;
+    const headerTitle = 'FORM SUBMISSION';
+    const formName = form.name.toUpperCase();
+    
+    // Embed Logo if exists
+    let logoImage: any = null;
+    let logoDims: { width: number; height: number } | null = null;
     if (orgLogoUrl) {
       try {
         const logoRes = await fetch(orgLogoUrl);
         const logoBuffer = await logoRes.arrayBuffer();
-        let logoImage;
-        if (orgLogoUrl.toLowerCase().includes('.png') || orgLogoUrl.includes('image/png')) {
-          logoImage = await pdfDoc.embedPng(logoBuffer);
-        } else {
-          logoImage = await pdfDoc.embedJpg(logoBuffer);
-        }
+        const isPng = orgLogoUrl.toLowerCase().includes('.png') || orgLogoUrl.includes('image/png');
+        logoImage = isPng ? await pdfDoc.embedPng(logoBuffer) : await pdfDoc.embedJpg(logoBuffer);
         const scale = Math.min(150 / logoImage.width, 60 / logoImage.height);
-        const dims = logoImage.scale(scale);
-        page.drawImage(logoImage, { x: 50, y: height - 50 - dims.height / 2, width: dims.width, height: dims.height });
-        logoWidthOffset = dims.width + 20;
-      } catch (err) {
-        console.error('Failed to embed org logo', err);
-      }
-    } else {
-      page.drawText(orgName.toUpperCase(), { x: 50, y: height - 45, size: 16, font, color: rgb(1, 1, 1) });
-      logoWidthOffset = font.widthOfTextAtSize(orgName.toUpperCase(), 16) + 20;
+        logoDims = logoImage.scale(scale);
+      } catch (err) { console.error('Failed to embed org logo', err); }
     }
 
-    page.drawText('FORM SUBMISSION', { x: 50 + logoWidthOffset, y: height - 42, size: 20, font, color: rgb(1, 1, 1) });
-    page.drawText(form.name.toUpperCase(), { x: 50 + logoWidthOffset, y: height - 68, size: 14, font: regularFont, color: rgb(0.8, 0.9, 0.8) });
+    const textLeft = headerLeft + (logoDims ? logoDims.width + 20 : 0);
+    const headerMaxWidth = width - textLeft - 50;
 
-    let currentY = height - 150;
+    // We'll draw elements starting from the top and keep track of where we end
+    let headerY = height - 42;
+    // Draw "FORM SUBMISSION" (one line is usually safe here)
+    page.drawText(headerTitle, { x: textLeft, y: headerY, size: 20, font, color: rgb(1, 1, 1) });
+    headerY -= 26;
+    
+    // Draw wrapped form name and get the new Y
+    const endTitleY = drawWrappedText(page, formName, textLeft, headerY, 12, regularFont, headerMaxWidth, 16, rgb(0.8, 0.9, 0.8));
+    
+    // Calculate required header height based on where the title ended
+    const headerBottomBorder = Math.min(height - 100, endTitleY - 20);
+    const actualHeaderHeight = height - headerBottomBorder;
+
+    // Now draw the green rectangle BEFORE drawing the logo and text (so it's in the background)
+    // Actually pdf-lib draws in order, so we should have drawn the rectangle first.
+    // I'll reposition the draw calls to be correct.
+    
+    // RE-DRAWING LOGIC:
+    // 1. Draw Rect
+    page.drawRectangle({ x: 0, y: headerBottomBorder, width, height: actualHeaderHeight, color: rgb(0.02, 0.59, 0.41) });
+    // 2. Clear then Draw Logo
+    if (logoImage && logoDims) {
+      page.drawImage(logoImage, { x: 50, y: height - 50 - logoDims.height / 2, width: logoDims.width, height: logoDims.height });
+    }
+    // 3. Draw Text over Rect
+    page.drawText(headerTitle, { x: textLeft, y: height - 42, size: 20, font, color: rgb(1, 1, 1) });
+    drawWrappedText(page, formName, textLeft, height - 68, 12, regularFont, headerMaxWidth, 16, rgb(0.8, 0.9, 0.8));
+
+    let currentY = headerBottomBorder - 40;
     page.drawText(`Submission ID: ${submissionId}`, { x: 50, y: currentY, size: 10, font: regularFont, color: rgb(0.4, 0.4, 0.4) });
     currentY -= 15;
     page.drawText(`Timestamp: ${new Date().toLocaleString()}`, { x: 50, y: currentY, size: 10, font: regularFont, color: rgb(0.4, 0.4, 0.4) });
     currentY -= 40;
+
 
     // 4. Draw form fields — images processed in parallel first
     if (fields) {
