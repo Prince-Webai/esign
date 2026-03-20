@@ -27,7 +27,7 @@ TRE Energy Team`;
  * Fetches the email template from the organization_settings table.
  * Falls back to defaults if not set or table doesn't have the columns yet.
  */
-async function getEmailTemplate(): Promise<{ subject: string; body: string }> {
+async function getEmailTemplate(): Promise<{ subject: string; body: string; format: 'text' | 'html' }> {
   try {
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -35,16 +35,18 @@ async function getEmailTemplate(): Promise<{ subject: string; body: string }> {
     );
     const { data } = await supabaseAdmin
       .from("organization_settings")
-      .select("email_subject, email_body")
+      .select("email_subject, email_body, email_template_format")
       .eq("id", 1)
       .single();
 
     return {
-      subject: data?.email_subject || DEFAULT_SUBJECT,
-      body: data?.email_body || DEFAULT_BODY,
+      subject: (data as any)?.email_subject || DEFAULT_SUBJECT,
+      body: (data as any)?.email_body || DEFAULT_BODY,
+      format: (data as any)?.email_template_format || 'text',
     };
-  } catch {
-    return { subject: DEFAULT_SUBJECT, body: DEFAULT_BODY };
+  } catch (err) {
+    console.error("Error fetching email template:", err);
+    return { subject: DEFAULT_SUBJECT, body: DEFAULT_BODY, format: 'text' };
   }
 }
 
@@ -94,23 +96,34 @@ export async function sendSigningEmail(
   };
 
   const subject = applyTemplate(template.subject, vars);
-  const bodyText = applyTemplate(template.body, vars);
+  const bodyContent = applyTemplate(template.body, vars);
 
-  // Convert plain text body to HTML (preserve line breaks)
-  const bodyHtml = bodyText
-    .split("\n")
-    .map(line => `<p style="margin:0 0 8px 0;">${line || "&nbsp;"}</p>`)
-    .join("");
+  let finalBodyHtml = "";
 
-  const html = `
-    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
-      ${bodyHtml}
+  if (template.format === 'html') {
+    // If HTML format, use the user's HTML directly (still wrapped in the max-width container for branding)
+    finalBodyHtml = bodyContent;
+  } else {
+    // If Text format, preserve line breaks and wrap in <p> tags
+    finalBodyHtml = bodyContent
+      .split("\n")
+      .map(line => `<p style="margin:0 0 12px 0;">${line || "&nbsp;"}</p>`)
+      .join("");
+      
+    // Always append the nice green button for 'text' format
+    finalBodyHtml += `
       <div style="margin: 32px 0;">
         <a href="${signingLink}" style="background-color: #22c55e; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">
           ✍️ Sign Document Now
         </a>
       </div>
-      <p style="color: #666; font-size: 12px;">Or copy this link into your browser:<br/>${signingLink}</p>
+    `;
+  }
+
+  const html = `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333; line-height: 1.6;">
+      ${finalBodyHtml}
+      <p style="color: #666; font-size: 11px; margin-top: 20px;">Or copy this link into your browser:<br/>${signingLink}</p>
       <hr style="margin-top: 40px; border: 0; border-top: 1px solid #eee;" />
       <p style="color: #999; font-size: 11px;">TOMORROW'S ENERGY TODAY</p>
     </div>

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { Settings, Image as ImageIcon, Save, Loader2, UploadCloud, X, Mail } from "lucide-react";
+import { Settings, Image as ImageIcon, Save, Loader2, UploadCloud, X, Mail, Code, Type } from "lucide-react";
 import { useOrganization } from "@/hooks/useOrganization";
 
 const DEFAULT_SUBJECT = "E-Signature Required: {{document_name}}";
@@ -24,6 +24,7 @@ export default function SettingsPage() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [emailSubject, setEmailSubject] = useState(DEFAULT_SUBJECT);
   const [emailBody, setEmailBody] = useState(DEFAULT_BODY);
+  const [emailFormat, setEmailFormat] = useState<'text' | 'html'>('text');
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -34,6 +35,7 @@ export default function SettingsPage() {
       setLogoPreview(org.logo_url);
       if ((org as any).email_subject) setEmailSubject((org as any).email_subject);
       if ((org as any).email_body) setEmailBody((org as any).email_body);
+      if ((org as any).email_template_format) setEmailFormat((org as any).email_template_format);
     }
   }, [org]);
 
@@ -78,6 +80,7 @@ export default function SettingsPage() {
           logo_url: finalLogoUrl,
           email_subject: emailSubject,
           email_body: emailBody,
+          email_template_format: emailFormat,
           updated_at: new Date().toISOString()
         })
         .eq("id", 1);
@@ -161,22 +164,42 @@ export default function SettingsPage() {
 
           {/* Email Template Card */}
           <div className="bg-white border border-slate-200 shadow-sm rounded-3xl p-6 lg:p-8 space-y-6">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center">
-                <Mail className="w-5 h-5" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center">
+                  <Mail className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900">Signing Email Template</h2>
+                  <p className="text-xs text-slate-400">Settings for the RAMS document launch email.</p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-lg font-bold text-slate-900">Signing Email Template</h2>
-                <p className="text-xs text-slate-400">This is the email sent to signers when a RAMS document is launched.</p>
+
+              {/* Format Toggle */}
+              <div className="flex bg-slate-100 p-1 rounded-xl">
+                <button 
+                  onClick={() => setEmailFormat('text')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${emailFormat === 'text' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  <Type className="w-3 h-3" />
+                  Plain Text
+                </button>
+                <button 
+                  onClick={() => setEmailFormat('html')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${emailFormat === 'html' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  <Code className="w-3 h-3" />
+                  HTML
+                </button>
               </div>
             </div>
 
             {/* Variable hints */}
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 pt-2">
               {['{{signer_name}}', '{{document_name}}', '{{signing_link}}'].map(v => (
                 <span key={v} className="text-[10px] font-mono bg-blue-50 text-blue-600 border border-blue-200 px-2 py-1 rounded-md">{v}</span>
               ))}
-              <span className="text-[10px] text-slate-400 self-center">← use these variables in your template</span>
+              <span className="text-[10px] text-slate-400 self-center">← available variables</span>
             </div>
 
             {/* Email Subject */}
@@ -193,20 +216,26 @@ export default function SettingsPage() {
 
             {/* Email Body */}
             <div className="space-y-2">
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Email Body</label>
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                Email Body {emailFormat === 'html' ? '(HTML Code)' : '(Text Content)'}
+              </label>
               <textarea
                 value={emailBody}
                 onChange={(e) => setEmailBody(e.target.value)}
                 rows={12}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all text-slate-900 font-mono leading-relaxed resize-y"
-                placeholder="Write your email message here..."
+                placeholder={emailFormat === 'html' ? "Enter HTML code here..." : "Write your email message here..."}
               />
-              <p className="text-xs text-slate-400">The signing link button will always be included in the email. The body appears above it.</p>
+              <p className="text-xs text-slate-400">
+                {emailFormat === 'text' 
+                  ? "We'll automatically handle line breaks and add a branding wrapper." 
+                  : "Your HTML will be rendered exactly as entered. Make sure to include all necessary styling."}
+              </p>
             </div>
 
             {/* Reset to default */}
             <button
-              onClick={() => { setEmailSubject(DEFAULT_SUBJECT); setEmailBody(DEFAULT_BODY); }}
+              onClick={() => { setEmailSubject(DEFAULT_SUBJECT); setEmailBody(DEFAULT_BODY); setEmailFormat('text'); }}
               className="text-xs text-slate-400 hover:text-slate-600 underline underline-offset-2 transition-colors"
             >
               Reset to default template
