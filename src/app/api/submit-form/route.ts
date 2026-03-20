@@ -114,7 +114,7 @@ export async function POST(req: NextRequest) {
         for (let i = 0; i < imageValues.length; i++) {
           const imgVal = imageValues[i];
           const cacheKey = `${field.id}_${i}`;
-          if (typeof imgVal !== 'string' || !imgVal.startsWith('data:image')) continue;
+          if (typeof imgVal !== 'string') continue;
 
           imageEmbedPromises.push(
             (async () => {
@@ -122,17 +122,18 @@ export async function POST(req: NextRequest) {
                 let imageBytes: Uint8Array;
                 let isPng = false;
 
-                if (typeof imgVal === 'string' && imgVal.startsWith('http')) {
+                if (imgVal.startsWith('http')) {
                   // Fetch from URL (New Storage-based flow)
                   const res = await fetch(imgVal);
+                  if (!res.ok) throw new Error(`Failed to fetch image: ${res.statusText}`);
                   const buffer = await res.arrayBuffer();
                   imageBytes = new Uint8Array(buffer);
                   isPng = imgVal.toLowerCase().includes('.png');
-                } else if (typeof imgVal === 'string' && imgVal.startsWith('data:image')) {
+                } else if (imgVal.startsWith('data:image')) {
                   // Process from base64 (Old fallback flow)
-                  const compressed = await compressBase64Image(imgVal, 800, 0.7);
-                  imageBytes = Uint8Array.from(atob(compressed.split(',')[1]), c => c.charCodeAt(0));
-                  isPng = compressed.includes('image/png');
+                  const base64Data = imgVal.split(',')[1];
+                  imageBytes = new Uint8Array(Buffer.from(base64Data, 'base64'));
+                  isPng = imgVal.includes('image/png');
                 } else {
                   return;
                 }
@@ -140,6 +141,7 @@ export async function POST(req: NextRequest) {
                 const image = isPng
                   ? await pdfDoc.embedPng(imageBytes)
                   : await pdfDoc.embedJpg(imageBytes);
+
                 
                 const maxWidth = 480;
                 const scale = Math.min(maxWidth / image.width, 260 / image.height, 1);
@@ -270,25 +272,31 @@ async function compressBase64Image(base64: string, maxWidth: number, quality: nu
 
 function drawWrappedText(page: any, text: string, x: number, y: number, size: number, font: any, maxWidth: number, lineHeight: number, color: any): number {
   if (!text) return y;
-  const words = text.split(' ');
-  let currentLine = '';
+  const paragraphs = text.split('\n');
   let curY = y;
 
-  for (const word of words) {
-    const testLine = currentLine + word + ' ';
-    const testWidth = font.widthOfTextAtSize(testLine, size);
-    if (testWidth > maxWidth && currentLine !== '') {
+  for (const paragraph of paragraphs) {
+    const words = paragraph.split(' ');
+    let currentLine = '';
+
+    for (const word of words) {
+      const testLine = currentLine + word + ' ';
+      const testWidth = font.widthOfTextAtSize(testLine, size);
+      if (testWidth > maxWidth && currentLine !== '') {
+        page.drawText(currentLine.trim(), { x, y: curY, size, font, color });
+        curY -= lineHeight;
+        currentLine = word + ' ';
+      } else {
+        currentLine = testLine;
+      }
+    }
+    if (currentLine.trim()) {
       page.drawText(currentLine.trim(), { x, y: curY, size, font, color });
       curY -= lineHeight;
-      currentLine = word + ' ';
-    } else {
-      currentLine = testLine;
     }
-  }
-  if (currentLine.trim()) {
-    page.drawText(currentLine.trim(), { x, y: curY, size, font, color });
-    curY -= lineHeight;
+    // Add extra space between paragraphs if needed, but here we just continue
   }
   return curY;
 }
+
 
