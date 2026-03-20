@@ -172,21 +172,39 @@ export async function POST(req: NextRequest) {
       // Now draw everything in order
       for (const field of fields) {
         if (field.type === 'header') {
-          currentY -= 30;
-          checkPage(40);
-          page.drawLine({ start: { x: 50, y: currentY + 10 }, end: { x: 550, y: currentY + 10 }, thickness: 2, color: rgb(0.1, 0.1, 0.1) });
+          // Add significant top margin before a new section
+          currentY -= 45;
+          
+          // Ensure enough space for Header Line + Header Text + at least one field label
+          checkPage(80);
+          
+          // Draw Section Line
+          page.drawLine({ 
+            start: { x: 50, y: currentY + 15 }, 
+            end: { x: 550, y: currentY + 15 }, 
+            thickness: 1.5, 
+            color: rgb(0.2, 0.2, 0.2) 
+          });
+
+          // Draw Header Text (Wrapped)
           currentY = drawWrappedText(page, field.label.toUpperCase(), 50, currentY, 14, font, 500, 18, rgb(0, 0, 0));
-          currentY -= 20;
+          
+          // Add margin after header
+          currentY -= 25;
           continue;
         }
 
         const val = data[field.id];
         if (val === undefined || val === null || val === '') continue;
         
-        // Ensure there is space for the label before drawing it
-        checkPage(40);
-        currentY = drawWrappedText(page, field.label.toUpperCase(), 50, currentY, 10, font, 500, 14, rgb(0, 0, 0));
-        currentY -= 8;
+        // Ensure there is space for the label + a bit of value before drawing
+        checkPage(50);
+
+        // Draw Label (Wrapped)
+        currentY = drawWrappedText(page, field.label.toUpperCase(), 50, currentY, 10, font, 500, 14, rgb(0.1, 0.1, 0.1));
+        
+        // Small gap between label and value
+        currentY -= 5;
 
         if (field.type === 'image') {
           const imageValues = Array.isArray(val) ? val : [val];
@@ -194,16 +212,21 @@ export async function POST(req: NextRequest) {
             const cached = imageCache[`${field.id}_${i}`];
             if (!cached) continue;
             const { image, dims } = cached;
-            checkPage(dims.height + 20);
+            
+            // Proactive page check for image + label/next field
+            checkPage(dims.height + 30);
+            
             page.drawImage(image, { x: 50, y: currentY - dims.height, width: dims.width, height: dims.height });
-            currentY -= dims.height + 20;
+            currentY -= dims.height + 25;
           }
         } else {
           // Draw Value (Wrapped)
           const textVal = String(val);
-          currentY = drawWrappedText(page, textVal, 70, currentY, 12, regularFont, 480, 16, rgb(0.2, 0.2, 0.2));
-          currentY -= 15;
+          currentY = drawWrappedText(page, textVal, 70, currentY, 12, regularFont, 480, 16, rgb(0.3, 0.3, 0.3));
         }
+
+        // Standard gap after every field
+        currentY -= 20;
       }
     }
 
