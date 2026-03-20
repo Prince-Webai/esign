@@ -19,7 +19,7 @@ TRE Energy Team`;
 
 export default function SettingsPage() {
   const { org, loading: orgLoading, refreshOrg } = useOrganization();
-  const [name, setName] = useState(org.name);
+  const [name, setName] = useState("");
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [emailSubject, setEmailSubject] = useState(DEFAULT_SUBJECT);
@@ -29,15 +29,18 @@ export default function SettingsPage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Sync state when org data loads or refreshes
   useEffect(() => {
-    if (org) {
-      setName(org.name);
+    if (org && !orgLoading) {
+      setName(org.name || "");
       setLogoPreview(org.logo_url);
-      if ((org as any).email_subject) setEmailSubject((org as any).email_subject);
-      if ((org as any).email_body) setEmailBody((org as any).email_body);
-      if ((org as any).email_template_format) setEmailFormat((org as any).email_template_format);
+      
+      // Only set if they exist in DB, otherwise keep defaults
+      if (org.email_subject) setEmailSubject(org.email_subject);
+      if (org.email_body) setEmailBody(org.email_body);
+      if (org.email_template_format) setEmailFormat(org.email_template_format);
     }
-  }, [org]);
+  }, [org, orgLoading]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -88,7 +91,7 @@ export default function SettingsPage() {
       if (updateError) throw updateError;
 
       setMessage({ type: 'success', text: 'Settings saved successfully!' });
-      refreshOrg();
+      await refreshOrg(); // Wait for the refresh to complete
       setLogoFile(null);
     } catch (err: any) {
       setMessage({ type: 'error', text: err.message || "Failed to save settings." });
@@ -110,10 +113,10 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {orgLoading ? (
+      {orgLoading && !org.name ? (
         <div className="py-20 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-6 animate-in fade-in duration-500">
           {/* Branding Card */}
           <div className="bg-white border border-slate-200 shadow-sm rounded-3xl p-6 lg:p-8 space-y-8">
             <h2 className="text-lg font-bold text-slate-900">Branding</h2>
@@ -262,3 +265,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+
