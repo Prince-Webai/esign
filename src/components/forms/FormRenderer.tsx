@@ -112,7 +112,10 @@ export function FormRenderer({ formId }: { formId: string }) {
              </div>
            ) : (
              <div key={field.id} className="space-y-6 group">
-                <label className="flex items-center gap-2"><span className="text-[12px] font-black uppercase tracking-[0.2em] text-slate-600 group-focus-within:text-emerald-600 transition-colors">{field.label}</span>{field.required && <span className="text-red-500 font-bold">•</span>}</label>
+                 <label className="flex items-start gap-2">
+                   <span className="text-sm font-semibold text-slate-700 group-focus-within:text-emerald-700 transition-colors leading-snug">{field.label}</span>
+                   {field.required && <span className="text-red-500 font-bold mt-0.5 flex-shrink-0">*</span>}
+                 </label>
                 {field.type === 'input' && <input type="text" placeholder={field.placeholder} className={cn("w-full bg-white border border-slate-200 rounded-2xl px-6 py-5 text-slate-900 outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/30 transition-all placeholder:text-slate-300 shadow-sm", errors[field.id] && "border-red-300 bg-red-50 focus:border-red-500/30 focus:ring-red-500/10")} value={formData[field.id] || ""} onChange={(e) => handleInputChange(field.id, e.target.value)} />}
                 {field.type === 'textarea' && <textarea placeholder={field.placeholder} className={cn("w-full bg-white border border-slate-200 rounded-2xl px-6 py-5 text-slate-900 outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/30 transition-all placeholder:text-slate-300 h-44 shadow-sm resize-none", errors[field.id] && "border-red-300 bg-red-50 focus:border-red-500/30 focus:ring-red-500/10")} value={formData[field.id] || ""} onChange={(e) => handleInputChange(field.id, e.target.value)} />}
                 {field.type === 'date' && <input type="date" className={cn("w-full bg-white border border-slate-200 rounded-2xl px-6 py-5 text-slate-900 outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/30 transition-all shadow-sm cursor-pointer", errors[field.id] && "border-red-300 bg-red-50 focus:border-red-500/30 focus:ring-red-500/10")} value={formData[field.id] || ""} onChange={(e) => handleInputChange(field.id, e.target.value)} />}
