@@ -213,7 +213,7 @@ export function FormRenderer({ formId }: { formId: string }) {
                            </div>
                         ))}
                         
-                        {(!formData[field.id] || formData[field.id].length < 10) && (
+                        {(!formData[field.id] || formData[field.id].length < 30) && (
                           <label className={cn(
                             "flex flex-col items-center justify-center aspect-square bg-slate-50 border-2 border-dashed rounded-2xl cursor-pointer hover:bg-emerald-50 hover:border-emerald-300 transition-all shadow-sm",
                             errors[field.id] ? "border-red-300 bg-red-50" : "border-slate-200"
@@ -224,7 +224,7 @@ export function FormRenderer({ formId }: { formId: string }) {
                                </div>
                                <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Upload Image</p>
                                <p className="text-[8px] text-slate-400 font-bold uppercase tracking-tighter mt-1">
-                                  {formData[field.id]?.length || 0} / 10 MAX
+                                  {formData[field.id]?.length || 0} / 30 MAX
                                </p>
                             </div>
                             <input 
@@ -232,22 +232,44 @@ export function FormRenderer({ formId }: { formId: string }) {
                               className="hidden" 
                               accept="image/*" 
                               multiple 
-                              onChange={(e) => {
+                              onChange={async (e) => {
                                 const files = Array.from(e.target.files || []);
                                 const currentCount = (formData[field.id] || []).length;
-                                const remaining = 10 - currentCount;
+                                const remaining = 30 - currentCount;
                                 const toUpload = files.slice(0, remaining);
 
-                                toUpload.forEach(file => {
-                                  const reader = new FileReader();
-                                  reader.onloadend = () => {
-                                    setFormData(prev => {
-                                      const existing = prev[field.id] || [];
-                                      if (existing.length >= 10) return prev;
-                                      return { ...prev, [field.id]: [...existing, reader.result] };
-                                    });
-                                  };
-                                  reader.readAsDataURL(file);
+                                // Helper for compression
+                                const compress = (f: File): Promise<string> => {
+                                  return new Promise((resolve) => {
+                                    const reader = new FileReader();
+                                    reader.readAsDataURL(f);
+                                    reader.onload = (event) => {
+                                      const img = new Image();
+                                      img.src = event.target?.result as string;
+                                      img.onload = () => {
+                                        const canvas = document.createElement('canvas');
+                                        let width = img.width;
+                                        let height = img.height;
+                                        const MAX_SIZE = 1200;
+                                        if (width > height) {
+                                          if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
+                                        } else {
+                                          if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
+                                        }
+                                        canvas.width = width;
+                                        canvas.height = height;
+                                        const ctx = canvas.getContext('2d');
+                                        ctx?.drawImage(img, 0, 0, width, height);
+                                        resolve(canvas.toDataURL('image/jpeg', 0.7));
+                                      };
+                                    };
+                                  });
+                                };
+
+                                const compressedImages = await Promise.all(toUpload.map(compress));
+                                setFormData(prev => {
+                                  const existing = prev[field.id] || [];
+                                  return { ...prev, [field.id]: [...existing, ...compressedImages].slice(0, 30) };
                                 });
                               }} 
                             />
@@ -257,6 +279,7 @@ export function FormRenderer({ formId }: { formId: string }) {
                   </div>
                 )}
                 {errors[field.id] && <p className="text-[10px] font-black uppercase tracking-[0.2em] text-red-500 pl-4 animate-in fade-in duration-300">{errors[field.id]}</p>}
+
              </div>
            )
          ))}
