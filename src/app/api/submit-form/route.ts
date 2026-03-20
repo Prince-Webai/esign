@@ -60,30 +60,29 @@ export async function POST(req: NextRequest) {
     const headerMaxWidth = width - textLeft - 50;
 
     // We'll draw elements starting from the top and keep track of where we end
-    let headerY = height - 42;
+    let headerY = height - 50; 
+    console.log(`[PDF] Starting header at Y: ${headerY}, textLeft: ${textLeft}`);
+
     // Draw "FORM SUBMISSION" (one line is usually safe here)
     page.drawText(headerTitle, { x: textLeft, y: headerY, size: 20, font, color: rgb(1, 1, 1) });
     headerY -= 26;
     
     // Draw wrapped form name and get the new Y
     const endTitleY = drawWrappedText(page, formName, textLeft, headerY, 12, regularFont, headerMaxWidth, 16, rgb(0.8, 0.9, 0.8));
+    console.log(`[PDF] Header text ended at Y: ${endTitleY}, maxWidth: ${headerMaxWidth}`);
     
     // Calculate required header height based on where the title ended
-    const headerBottomBorder = Math.min(height - 100, endTitleY - 20);
+    const headerBottomBorder = Math.min(height - 120, endTitleY - 20);
     const actualHeaderHeight = height - headerBottomBorder;
+    console.log(`[PDF] Header bottom border: ${headerBottomBorder}, actual height: ${actualHeaderHeight}`);
 
-    // Now draw the green rectangle BEFORE drawing the logo and text (so it's in the background)
-    // Actually pdf-lib draws in order, so we should have drawn the rectangle first.
-    // I'll reposition the draw calls to be correct.
-    
     // RE-DRAWING LOGIC (Actually drawing on the green bar):
     page.drawRectangle({ x: 0, y: headerBottomBorder, width, height: actualHeaderHeight, color: rgb(0.02, 0.59, 0.41) });
     if (logoImage && logoDims) {
       page.drawImage(logoImage, { x: 50, y: height - 50 - logoDims.height / 2, width: logoDims.width, height: logoDims.height });
     }
-    page.drawText(headerTitle, { x: textLeft, y: height - 42, size: 20, font, color: rgb(1, 1, 1) });
-    // This second call effectively draws the title in white over the green bar
-    drawWrappedText(page, formName, textLeft, height - 68, 12, regularFont, headerMaxWidth, 16, rgb(0.8, 0.9, 0.8));
+    page.drawText(headerTitle, { x: textLeft, y: height - 50, size: 20, font, color: rgb(1, 1, 1) });
+    drawWrappedText(page, formName, textLeft, height - 76, 12, regularFont, headerMaxWidth, 16, rgb(0.8, 0.9, 0.8));
 
     let currentY = headerBottomBorder - 40;
     page.drawText(`Submission ID: ${submissionId}`, { x: 50, y: currentY, size: 10, font: regularFont, color: rgb(0.4, 0.4, 0.4) });
@@ -96,6 +95,7 @@ export async function POST(req: NextRequest) {
       currentY -= 15;
     }
     currentY -= 20;
+
 
 
 
@@ -276,12 +276,13 @@ function drawWrappedText(page: any, text: string, x: number, y: number, size: nu
   let curY = y;
 
   for (const paragraph of paragraphs) {
-    const words = paragraph.split(' ');
+    const words = paragraph.trim().split(/\s+/);
     let currentLine = '';
 
     for (const word of words) {
       const testLine = currentLine + word + ' ';
       const testWidth = font.widthOfTextAtSize(testLine, size);
+      
       if (testWidth > maxWidth && currentLine !== '') {
         page.drawText(currentLine.trim(), { x, y: curY, size, font, color });
         curY -= lineHeight;
@@ -294,9 +295,9 @@ function drawWrappedText(page: any, text: string, x: number, y: number, size: nu
       page.drawText(currentLine.trim(), { x, y: curY, size, font, color });
       curY -= lineHeight;
     }
-    // Add extra space between paragraphs if needed, but here we just continue
   }
   return curY;
 }
+
 
 
