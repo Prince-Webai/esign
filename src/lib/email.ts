@@ -98,36 +98,48 @@ export async function sendSigningEmail(
   const subject = applyTemplate(template.subject, vars);
   const bodyContent = applyTemplate(template.body, vars);
 
-  let finalBodyHtml = "";
+  let finalHtml = "";
 
   if (template.format === 'html') {
-    // If HTML format, use the user's HTML directly (still wrapped in the max-width container for branding)
-    finalBodyHtml = bodyContent;
+    // Check if it's a full HTML document
+    const isFullHtml = bodyContent.toLowerCase().includes("<html") || bodyContent.toLowerCase().includes("<body");
+    
+    if (isFullHtml) {
+      // If it's a full document, use it as is
+      finalHtml = bodyContent;
+    } else {
+      // If it's just an HTML snippet, wrap it in the responsive container
+      finalHtml = `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333; line-height: 1.6;">
+          ${bodyContent}
+          <p style="color: #666; font-size: 11px; margin-top: 20px;">Or copy this link into your browser:<br/>${signingLink}</p>
+          <hr style="margin-top: 40px; border: 0; border-top: 1px solid #eee;" />
+          <p style="color: #999; font-size: 11px;">TOMORROW'S ENERGY TODAY</p>
+        </div>
+      `;
+    }
   } else {
     // If Text format, preserve line breaks and wrap in <p> tags
-    finalBodyHtml = bodyContent
+    const formattedBody = bodyContent
       .split("\n")
-      .map(line => `<p style="margin:0 0 12px 0;">${line || "&nbsp;"}</p>`)
+      .map((line: string) => `<p style="margin:0 0 12px 0;">${line || "&nbsp;"}</p>`)
       .join("");
       
-    // Always append the nice green button for 'text' format
-    finalBodyHtml += `
-      <div style="margin: 32px 0;">
-        <a href="${signingLink}" style="background-color: #22c55e; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">
-          ✍️ Sign Document Now
-        </a>
+    finalHtml = `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333; line-height: 1.6;">
+        ${formattedBody}
+        <div style="margin: 32px 0;">
+          <a href="${signingLink}" style="background-color: #22c55e; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">
+            ✍️ Sign Document Now
+          </a>
+        </div>
+        <p style="color: #666; font-size: 11px; margin-top: 20px;">Or copy this link into your browser:<br/>${signingLink}</p>
+        <hr style="margin-top: 40px; border: 0; border-top: 1px solid #eee;" />
+        <p style="color: #999; font-size: 11px;">TOMORROW'S ENERGY TODAY</p>
       </div>
     `;
   }
 
-  const html = `
-    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333; line-height: 1.6;">
-      ${finalBodyHtml}
-      <p style="color: #666; font-size: 11px; margin-top: 20px;">Or copy this link into your browser:<br/>${signingLink}</p>
-      <hr style="margin-top: 40px; border: 0; border-top: 1px solid #eee;" />
-      <p style="color: #999; font-size: 11px;">TOMORROW'S ENERGY TODAY</p>
-    </div>
-  `;
 
   try {
     if (!process.env.SMTP_HOST) {
@@ -138,8 +150,9 @@ export async function sendSigningEmail(
       from: `"TRE Energy" <${process.env.SMTP_USER}>`,
       to: email,
       subject,
-      html,
+      html: finalHtml,
     });
+
     console.log("Signing email sent successfully.");
   } catch (err) {
     console.error("Failed to send signing email:", err);

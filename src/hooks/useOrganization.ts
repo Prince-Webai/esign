@@ -4,6 +4,9 @@ import { supabase } from "@/lib/supabase";
 export interface OrganizationSettings {
   name: string;
   logo_url: string | null;
+  email_subject?: string;
+  email_body?: string;
+  email_template_format?: 'text' | 'html';
 }
 
 export function useOrganization() {
@@ -17,12 +20,12 @@ export function useOrganization() {
     try {
       const { data, error } = await supabase
         .from("organization_settings")
-        .select("name, logo_url")
+        .select("name, logo_url, email_subject, email_body, email_template_format")
         .eq("id", 1)
         .single();
       
       if (data && !error) {
-        setOrg(data);
+        setOrg(data as OrganizationSettings);
       }
     } catch (err) {
       console.error("Failed to fetch organization settings:", err);
@@ -30,6 +33,7 @@ export function useOrganization() {
       setLoading(false);
     }
   };
+
 
   useEffect(() => {
     fetchOrg();
