@@ -233,15 +233,40 @@ export async function POST(req: NextRequest) {
 
     const pdfBytes = await pdfDoc.save();
 
-    // 5. Upload PDF
-    const fileName = `submissions/${submissionId}.pdf`;
+    // 5. Generate human-readable file name
+    let jobNumberText = '';
+    if (fields && data) {
+      const jobField = fields.find((f: any) => 
+        f.type !== 'header' &&
+        f.type !== 'image' &&
+        f.label && 
+        (f.label.toLowerCase().includes('job num') || 
+         f.label.toLowerCase().includes('job no') || 
+         f.label.toLowerCase() === 'job' ||
+         f.label.toLowerCase().includes('reference'))
+      );
+      if (jobField && data[jobField.id]) {
+        jobNumberText = String(data[jobField.id]).trim().replace(/[^a-zA-Z0-9\s-]/g, '');
+      }
+    }
+
+    const safeFormName = (form.title || 'Form').trim().replace(/[^a-zA-Z0-9\s-]/g, '');
+    let baseFileName = safeFormName;
+    if (jobNumberText) {
+      baseFileName = `${safeFormName} ${jobNumberText}`.trim();
+    }
+
+    // Use submissionId as a folder to guarantee uniqueness, then the clean filename
+    const fileName = `submissions/${submissionId}/${baseFileName}.pdf`;
     const { error: uploadError } = await supabase.storage
       .from('rams')
       .upload(fileName, pdfBytes, { contentType: 'application/pdf', upsert: true });
 
     if (uploadError) throw uploadError;
 
-    const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/rams/${fileName}`;
+    // Supabase needs URL encoding for spaces in public URLs
+    const encodedFileName = `submissions/${submissionId}/${encodeURIComponent(baseFileName)}.pdf`;
+    const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/rams/${encodedFileName}`;
 
     // 6. Update submission record
     await supabase.from('form_submissions').update({ pdf_url: publicUrl, status: 'completed' }).eq('id', submissionId);
