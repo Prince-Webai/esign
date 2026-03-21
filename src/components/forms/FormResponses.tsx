@@ -64,6 +64,33 @@ export function FormResponses({ formId }: { formId: string }) {
     setIsDeleting(false);
   }
 
+  const downloadImage = async (url: string, index: number, fieldLabel: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      // Create a clean filename
+      const cleanLabel = (fieldLabel || 'image').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      const filename = `${cleanLabel}-${index + 1}.png`;
+
+      // Fetch the image as a blob to force download
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error('Download failed:', error);
+      // Fallback: just open in new tab
+      window.open(url, '_blank');
+    }
+  };
+
+
   const filteredSubmissions = submissions.filter(s => JSON.stringify(s.data).toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
@@ -108,11 +135,28 @@ export function FormResponses({ formId }: { formId: string }) {
                         <div key={field.id} className="space-y-1.5 min-w-0">
                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">{field.label}</p>
                            {field.type === 'image' ? (
-                              sub.data?.[field.id] ? (
-                                <button onClick={() => window.open(sub.data?.[field.id], '_blank')} className="w-12 h-12 rounded-lg overflow-hidden border border-slate-200 hover:border-emerald-500/30 transition-all"><img src={sub.data?.[field.id]} alt="Sub" className="w-full h-full object-cover" /></button>
-                              ) : <p className="text-xs text-slate-400 font-black tracking-widest">N/A</p>
+                              sub.data?.[field.id] && (Array.isArray(sub.data[field.id]) ? sub.data[field.id].length > 0 : true) ? (
+                                <div className="flex flex-wrap gap-2 mt-1">
+                                  {(Array.isArray(sub.data[field.id]) ? sub.data[field.id] : [sub.data[field.id]]).map((imgUrl: string, i: number) => (
+                                    <div key={i} className="relative group/img w-14 h-14 rounded-xl overflow-hidden border border-slate-200 shadow-sm cursor-pointer" onClick={() => window.open(imgUrl, '_blank')}>
+                                      <img src={imgUrl} alt="Thumbnail" className="w-full h-full object-cover transition-transform duration-300 group-hover/img:scale-110" />
+                                      {/* Download Overlay */}
+                                      <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                                        <button 
+                                          onClick={(e) => downloadImage(imgUrl, i, field.label, e)} 
+                                          title="Download Image"
+                                          className="p-1.5 bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-600 rounded-full transition-all shadow-md transform hover:scale-110 active:scale-95"
+                                        >
+                                          <Download className="w-3.5 h-3.5" />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">N/A</p>
                            ) : (
                               <p className="text-sm font-bold text-slate-900 truncate max-w-full">{sub.data?.[field.id] || "—"}</p>
+
                            )}
                         </div>
                       ))}
