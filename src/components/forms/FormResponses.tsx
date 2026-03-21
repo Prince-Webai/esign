@@ -23,17 +23,53 @@ export function FormResponses({ formId }: { formId: string }) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  useEffect(() => { fetchData(); }, [formId]);
+  const PAGE_SIZE = 10;
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  async function fetchData() {
-    setLoading(true);
-    const { data: form } = await supabase.from("forms").select("name").eq("id", formId).single();
-    if (form) setFormName(form.name);
-    const { data: fieldsData } = await supabase.from("form_fields").select("id, label, type").eq("form_id", formId).order("order_index", { ascending: true });
-    if (fieldsData) setFields(fieldsData);
-    const { data: subData } = await supabase.from("form_submissions").select("*").eq("form_id", formId).order("submitted_at", { ascending: false });
-    if (subData) setSubmissions(subData);
-    setLoading(false);
+  useEffect(() => { fetchData(false); }, [formId]);
+
+  async function fetchData(isLoadMore = false) {
+    if (!isLoadMore) setLoading(true);
+    else setLoadingMore(true);
+
+    try {
+      if (!isLoadMore) {
+        const [formRes, fieldsRes] = await Promise.all([
+          supabase.from("forms").select("name").eq("id", formId).single(),
+          supabase.from("form_fields").select("id, label, type").eq("form_id", formId).order("order_index", { ascending: true })
+        ]);
+        if (formRes.data) setFormName(formRes.data.name);
+        if (fieldsRes.data) setFields(fieldsRes.data);
+      }
+
+      const currentPage = isLoadMore ? page + 1 : 0;
+      const from = currentPage * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+
+      const { data: subData, count } = await supabase
+        .from("form_submissions")
+        .select("*", { count: 'exact' })
+        .eq("form_id", formId)
+        .order("submitted_at", { ascending: false })
+        .range(from, to);
+
+      if (subData) {
+        if (isLoadMore) {
+          setSubmissions(prev => [...prev, ...subData]);
+        } else {
+          setSubmissions(subData);
+        }
+        setPage(currentPage);
+        setHasMore(count !== null ? from + PAGE_SIZE < count : false);
+      }
+    } catch (err) {
+      console.error("Failed to fetch data:", err);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
   }
 
   async function regeneratePdf(sub: Submission) {
@@ -45,7 +81,7 @@ export function FormResponses({ formId }: { formId: string }) {
       });
 
       const result = await res.json();
-      if (result.success) { fetchData(); }
+      if (result.success) { fetchData(false); }
       else { alert("PDF regeneration failed: " + result.error); }
     } catch (e: any) { alert("Error: " + e.message); }
   }
@@ -182,6 +218,19 @@ export function FormResponses({ formId }: { formId: string }) {
                 </div>
              </div>
            ))}
+
+           {hasMore && (
+              <div className="flex justify-center pt-8">
+                <button 
+                  onClick={() => fetchData(true)} 
+                  disabled={loadingMore}
+                  className="px-8 py-4 bg-white border border-slate-200 text-slate-600 font-bold rounded-2xl shadow-sm hover:border-emerald-500 hover:text-emerald-600 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-3"
+                >
+                  {loadingMore ? <Loader2 className="w-5 h-5 animate-spin" /> : <Clock className="w-5 h-5" />}
+                  {loadingMore ? "EXCAVATING RECORDS..." : "LOAD OLDER RECORDS"}
+                </button>
+              </div>
+           )}
         </div>
       )}
 
