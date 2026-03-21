@@ -250,8 +250,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const safeFormName = (form.title || 'Form').trim().replace(/[^a-zA-Z0-9\s-]/g, '');
+    const safeFormName = (form.name || form.title || 'Form').trim().replace(/[^a-zA-Z0-9\s-]/g, '');
     let baseFileName = safeFormName;
+
     if (jobNumberText) {
       baseFileName = `${safeFormName} ${jobNumberText}`.trim();
     }
