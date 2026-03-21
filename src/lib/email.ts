@@ -129,9 +129,10 @@ export async function sendSigningEmail(
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333; line-height: 1.6;">
         ${formattedBody}
         <div style="margin: 32px 0;">
-          <a href="${signingLink}" style="background-color: #22c55e; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">
+          <a href="${signingLink}" style="background-color: #22c55e; color: #ffffff; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">
             ✍️ Sign Document Now
           </a>
+
         </div>
         <p style="color: #666; font-size: 11px; margin-top: 20px;">Or copy this link into your browser:<br/>${signingLink}</p>
         <hr style="margin-top: 40px; border: 0; border-top: 1px solid #eee;" />
