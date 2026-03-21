@@ -48,56 +48,89 @@ export function FormDashboard() {
   const filteredForms = forms.filter(f => f.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
-    <div className="space-y-10 animate-in fade-in slide-in-from-top-4 duration-500" onClick={() => setOpenMenuId(null)}>
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white p-8 rounded-[32px] border border-slate-200 shadow-sm">
+    <div className="space-y-8 animate-in fade-in slide-in-from-top-4 duration-500" onClick={() => setOpenMenuId(null)}>
+      {/* Header Area */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white p-6 md:p-8 rounded-2xl border border-slate-200/60 shadow-sm">
         <div className="space-y-1">
-          <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">Form Ecosystem</h1>
-          <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px] flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" /> Strategic Data Management</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900">Forms</h1>
+          <p className="text-slate-500 text-sm flex items-center gap-2"> Manage data collection pipelines and view submissions</p>
         </div>
-        <Link href="/forms/new" className="bg-emerald-600 px-8 py-4 rounded-2xl flex items-center gap-3 text-white font-black text-sm shadow-xl shadow-emerald-500/20 hover:bg-emerald-700 transition-all hover:scale-[1.03] active:scale-95 group"><Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" /> CREATE NEW FORM</Link>
+        <Link 
+          href="/forms/new" 
+          className="bg-emerald-600 px-5 py-2.5 rounded-xl flex items-center gap-2 text-white font-medium text-sm shadow-sm hover:bg-emerald-700 transition-colors"
+        >
+          <Plus className="w-4 h-4" /> 
+          Create form
+        </Link>
       </div>
 
-      <div className="relative group max-w-2xl">
-        <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-emerald-600 transition-colors" />
-        <input type="text" placeholder="Filtering through active form configurations..." className="w-full bg-white border border-slate-200 rounded-3xl pl-16 pr-6 py-5 text-slate-900 outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/30 transition-all placeholder:text-slate-300 shadow-sm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+      {/* Search Bar */}
+      <div className="relative group max-w-xl">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-emerald-600 transition-colors" />
+        <input 
+          type="text" 
+          placeholder="Search forms..." 
+          className="w-full bg-white border border-slate-200/60 rounded-xl pl-11 pr-4 py-2.5 text-sm font-medium text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all placeholder:text-slate-400 shadow-sm" 
+          value={searchTerm} 
+          onChange={(e) => setSearchTerm(e.target.value)} 
+        />
       </div>
 
+      {/* Main Content */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-32 space-y-4"><Loader2 className="w-12 h-12 text-emerald-600 animate-spin" /><p className="text-slate-400 font-bold tracking-widest uppercase text-xs">Synchronizing Records...</p></div>
+        <div className="flex flex-col items-center justify-center py-24 space-y-4">
+          <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
+          <p className="text-slate-500 font-medium text-sm">Loading forms...</p>
+        </div>
       ) : filteredForms.length === 0 ? (
-        <div className="bg-white border border-slate-200 rounded-[48px] p-24 text-center shadow-sm"><FileText className="w-16 h-16 text-slate-300 mx-auto mb-6" /><p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-xs">No active configurations detected</p><Link href="/forms/new" className="mt-8 inline-block text-emerald-600 font-black text-xs uppercase tracking-widest hover:text-emerald-700 transition-colors">Initialize first form →</Link></div>
+        <div className="bg-white border border-slate-200/60 rounded-2xl p-16 text-center shadow-sm">
+          <FileText className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+          <p className="text-slate-500 font-medium text-sm">No forms found matching your criteria</p>
+          <Link href="/forms/new" className="mt-4 inline-block text-emerald-600 font-semibold text-sm hover:text-emerald-700 transition-colors">
+            Create your first form &rarr;
+          </Link>
+        </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredForms.map((form) => (
-            <div key={form.id} className="group bg-white border border-slate-200 rounded-[32px] p-8 hover:border-emerald-500/30 transition-all duration-500 hover:shadow-xl hover:shadow-emerald-500/5 relative">
+            <div key={form.id} className="group bg-white border border-slate-200/60 rounded-2xl p-6 hover:border-emerald-500/30 transition-all duration-300 hover:shadow-md relative">
                
                {/* 3-Dot Action Menu */}
-               <div className="absolute right-6 top-6 z-10" onClick={(e) => e.stopPropagation()}>
-                  <button onClick={() => setOpenMenuId(openMenuId === form.id ? null : form.id)} className="p-2 text-slate-400 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors border border-slate-100"><MoreVertical className="w-5 h-5" /></button>
+               <div className="absolute right-4 top-4 z-10" onClick={(e) => e.stopPropagation()}>
+                  <button onClick={() => setOpenMenuId(openMenuId === form.id ? null : form.id)} className="p-1.5 text-slate-400 hover:text-slate-900 bg-transparent hover:bg-slate-50 rounded-lg transition-colors border border-transparent hover:border-slate-200"><MoreVertical className="w-4 h-4" /></button>
                   {openMenuId === form.id && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-2xl shadow-xl py-2 z-50 animate-in fade-in zoom-in-95 duration-200">
-                      <Link href={`/forms/${form.id}`} target="_blank" className="flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"><ExternalLink className="w-4 h-4" /> View Form</Link>
-                      <Link href={`/forms/${form.id}/responses`} className="flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-emerald-600 transition-colors"><Layout className="w-4 h-4" /> Submissions</Link>
-                      <Link href={`/forms/${form.id}/edit`} className="flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors"><Edit2 className="w-4 h-4" /> Edit Form</Link>
-                      <div className="h-px bg-slate-100 my-1 mx-4" />
-                      <button onClick={() => setDeletingFormId(form.id)} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-red-500 hover:bg-red-50 transition-colors text-left"><Trash2 className="w-4 h-4" /> Delete Form</button>
+                    <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-lg py-1.5 z-50 animate-in fade-in zoom-in-95 duration-200">
+                      <Link href={`/forms/${form.id}`} target="_blank" className="flex items-center gap-2.5 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"><ExternalLink className="w-4 h-4" /> View live form</Link>
+                      <Link href={`/forms/${form.id}/responses`} className="flex items-center gap-2.5 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-emerald-600 transition-colors"><Layout className="w-4 h-4" /> Submissions</Link>
+                      <Link href={`/forms/${form.id}/edit`} className="flex items-center gap-2.5 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors"><Edit2 className="w-4 h-4" /> Edit builder</Link>
+                      <div className="h-px bg-slate-100 my-1 mx-3" />
+                      <button onClick={() => setDeletingFormId(form.id)} className="w-full flex items-center gap-2.5 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors text-left"><Trash2 className="w-4 h-4" /> Delete form</button>
                     </div>
                   )}
                </div>
 
-               <div className="relative space-y-8">
-                  <div className="p-3.5 bg-slate-50 rounded-2xl text-slate-400 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-500 shadow-sm w-max">
-                     <FileText className="w-6 h-6" />
+               <div className="relative space-y-4">
+                  <div className="w-10 h-10 bg-slate-50 border border-slate-100 rounded-xl text-slate-500 group-hover:text-emerald-600 group-hover:border-emerald-100 group-hover:bg-emerald-50 flex items-center justify-center transition-colors">
+                     <FileText className="w-5 h-5" />
                   </div>
 
                   <div>
-                     <h3 className="text-2xl font-black text-slate-900 mb-2 pr-10 truncate group-hover:text-emerald-600 transition-colors">{form.name}</h3>
-                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-6">Configured Pipeline</p>
+                     <h3 className="text-lg font-semibold text-slate-900 mb-1 pr-6 truncate">{form.name}</h3>
+                     <p className="text-xs text-slate-500 mb-4 pb-4 border-b border-slate-100">Created {new Date(form.created_at).toLocaleDateString()}</p>
                      
                      <div className="flex items-center gap-6">
-                        <div><p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Submissions</p><p className="text-xl font-black text-slate-900">{form.submission_count || 0}</p></div>
-                        <div className="w-px h-8 bg-slate-100" />
-                        <div><p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Integrations</p><p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">ENABLED</p></div>
+                        <div>
+                           <p className="text-[11px] font-medium text-slate-400 mb-0.5">Responses</p>
+                           <p className="text-sm font-semibold text-slate-700">{form.submission_count || 0}</p>
+                        </div>
+                        <div className="w-px h-6 bg-slate-100" />
+                        <div>
+                           <p className="text-[11px] font-medium text-slate-400 mb-0.5">Integrations</p>
+                           <div className="flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                              <p className="text-[11px] font-medium text-slate-600">Active</p>
+                           </div>
+                        </div>
                      </div>
                   </div>
                </div>
