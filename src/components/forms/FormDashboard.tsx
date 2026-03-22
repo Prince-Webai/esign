@@ -51,26 +51,26 @@ export function FormDashboard() {
     <div className="space-y-8 animate-in fade-in slide-in-from-top-4 duration-500" onClick={() => setOpenMenuId(null)}>
       {/* Header Area */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white p-6 md:p-8 rounded-2xl border border-slate-200/60 shadow-sm">
-        <div className="space-y-1">
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900">Forms</h1>
-          <p className="text-slate-500 text-sm flex items-center gap-2"> Manage data collection pipelines and view submissions</p>
+        <div className="space-y-2">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900">Forms</h1>
+          <p className="text-slate-500 text-base flex items-center gap-2"> Manage data collection pipelines and view submissions</p>
         </div>
         <Link 
           href="/forms/new" 
-          className="bg-emerald-600 px-5 py-2.5 rounded-xl flex items-center gap-2 text-white font-medium text-sm shadow-sm hover:bg-emerald-700 transition-colors"
+          className="bg-emerald-600 px-6 py-3 rounded-xl flex items-center gap-2 text-white font-semibold text-base shadow-sm hover:bg-emerald-700 transition-colors"
         >
-          <Plus className="w-4 h-4" /> 
+          <Plus className="w-5 h-5" /> 
           Create form
         </Link>
       </div>
 
       {/* Search Bar */}
       <div className="relative group max-w-xl">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-emerald-600 transition-colors" />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-emerald-600 transition-colors" />
         <input 
           type="text" 
           placeholder="Search forms..." 
-          className="w-full bg-white border border-slate-200/60 rounded-xl pl-11 pr-4 py-2.5 text-sm font-medium text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all placeholder:text-slate-400 shadow-sm" 
+          className="w-full bg-white border border-slate-200/60 rounded-xl pl-12 pr-4 py-3 text-base font-medium text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all placeholder:text-slate-400 shadow-sm" 
           value={searchTerm} 
           onChange={(e) => setSearchTerm(e.target.value)} 
         />
@@ -80,13 +80,13 @@ export function FormDashboard() {
       {loading ? (
         <div className="flex flex-col items-center justify-center py-24 space-y-4">
           <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
-          <p className="text-slate-500 font-medium text-sm">Loading forms...</p>
+          <p className="text-slate-500 font-semibold text-base">Loading forms...</p>
         </div>
       ) : filteredForms.length === 0 ? (
         <div className="bg-white border border-slate-200/60 rounded-2xl p-16 text-center shadow-sm">
-          <FileText className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-          <p className="text-slate-500 font-medium text-sm">No forms found matching your criteria</p>
-          <Link href="/forms/new" className="mt-4 inline-block text-emerald-600 font-semibold text-sm hover:text-emerald-700 transition-colors">
+          <FileText className="w-14 h-14 text-slate-300 mx-auto mb-4" />
+          <p className="text-slate-500 font-semibold text-base">No forms found matching your criteria</p>
+          <Link href="/forms/new" className="mt-4 inline-block text-emerald-600 font-bold text-base hover:text-emerald-700 transition-colors">
             Create your first form &rarr;
           </Link>
         </div>
@@ -110,25 +110,25 @@ export function FormDashboard() {
                </div>
 
                <div className="relative space-y-4">
-                  <div className="w-10 h-10 bg-slate-50 border border-slate-100 rounded-xl text-slate-500 group-hover:text-emerald-600 group-hover:border-emerald-100 group-hover:bg-emerald-50 flex items-center justify-center transition-colors">
-                     <FileText className="w-5 h-5" />
+                  <div className="w-12 h-12 bg-slate-50 border border-slate-100 rounded-xl text-slate-500 group-hover:text-emerald-600 group-hover:border-emerald-100 group-hover:bg-emerald-50 flex items-center justify-center transition-colors">
+                     <FileText className="w-6 h-6" />
                   </div>
 
                   <div>
-                     <h3 className="text-lg font-semibold text-slate-900 mb-1 pr-6 truncate">{form.name}</h3>
-                     <p className="text-xs text-slate-500 mb-4 pb-4 border-b border-slate-100">Created {new Date(form.created_at).toLocaleDateString()}</p>
+                     <h3 className="text-xl font-bold text-slate-900 mb-1 pr-6 truncate">{form.name}</h3>
+                     <p className="text-sm text-slate-500 mb-4 pb-4 border-b border-slate-100 font-medium">Created {new Date(form.created_at).toLocaleDateString()}</p>
                      
                      <div className="flex items-center gap-6">
                         <div>
-                           <p className="text-[11px] font-medium text-slate-400 mb-0.5">Responses</p>
-                           <p className="text-sm font-semibold text-slate-700">{form.submission_count || 0}</p>
+                           <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-1">Responses</p>
+                           <p className="text-base font-bold text-slate-700">{form.submission_count || 0}</p>
                         </div>
-                        <div className="w-px h-6 bg-slate-100" />
+                        <div className="w-px h-8 bg-slate-100" />
                         <div>
-                           <p className="text-[11px] font-medium text-slate-400 mb-0.5">Integrations</p>
-                           <div className="flex items-center gap-1.5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                              <p className="text-[11px] font-medium text-slate-600">Active</p>
+                           <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-1">Integrations</p>
+                           <div className="flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                              <p className="text-xs font-bold text-slate-600">Active</p>
                            </div>
                         </div>
                      </div>

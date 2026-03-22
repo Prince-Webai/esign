@@ -50,7 +50,7 @@ export function Navbar() {
         <div className="flex items-center gap-3">
           {org.logo_url ? (
             <div className="flex items-center gap-2">
-              <img src={org.logo_url} alt={org.name} className="h-10 max-w-[150px] object-contain" />
+              <img src={org.logo_url} alt={org.name} className="h-14 max-w-[180px] object-contain" />
             </div>
           ) : (
             <>
@@ -83,7 +83,7 @@ export function Navbar() {
         <div className="flex flex-col h-full p-6">
           <div className="hidden lg:flex items-center gap-3 mb-10 px-2 min-h-[56px]">
             {org.logo_url ? (
-               <img src={org.logo_url} alt={org.name} className="h-14 max-w-[220px] object-contain drop-shadow-sm" />
+               <img src={org.logo_url} alt={org.name} className="h-20 max-w-[280px] object-contain drop-shadow-sm" />
             ) : (
               <>
                 <div className="w-10 h-10 rounded-xl premium-gradient flex items-center justify-center font-bold text-white shadow-lg shadow-primary/20 flex-shrink-0">
@@ -115,7 +115,7 @@ export function Navbar() {
                   )}
                 >
                   <item.icon className={cn("w-5 h-5 transition-transform duration-300", isActive ? "text-white scale-110" : "group-hover:text-emerald-500 group-hover:scale-110")} />
-                  <span className="font-black text-[11px] uppercase tracking-widest">{item.name}</span>
+                  <span className="font-bold text-xs uppercase tracking-wider">{item.name}</span>
                 </Link>
               );
             })}

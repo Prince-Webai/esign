@@ -122,14 +122,14 @@ export function FormRenderer({ formId }: { formId: string }) {
 
 
 
-  if (loading) return <div className="flex flex-col items-center justify-center py-32 space-y-4"><Loader2 className="w-12 h-12 text-emerald-600 animate-spin" /><p className="text-slate-400 font-bold tracking-widest uppercase text-xs">Initiating Secure Handshake...</p></div>;
-  if (!form) return <div className="text-center py-32 text-slate-400 font-bold uppercase tracking-widest">Form Not Discovered</div>;
+  if (loading) return <div className="flex flex-col items-center justify-center py-32 space-y-4"><Loader2 className="w-10 h-10 text-emerald-600 animate-spin" /><p className="text-slate-500 font-medium text-sm">Initiating Secure Connection...</p></div>;
+  if (!form) return <div className="text-center py-32 text-slate-500 font-medium text-sm">Form Not Discovered</div>;
   if (submitted) return (
     <div className="max-w-xl mx-auto py-32 text-center animate-in zoom-in duration-500">
-       <div className="w-24 h-24 rounded-[40px] bg-emerald-500/10 flex items-center justify-center mx-auto mb-8 border border-emerald-500/20 shadow-2xl shadow-emerald-500/10"><CheckCircle2 className="w-12 h-12 text-emerald-500" /></div>
-       <h2 className="text-4xl font-black text-slate-900 mb-4">Submission Successful</h2>
-       <p className="text-slate-500 text-lg mb-10">Your response has been received. Thank you!</p>
-       <button onClick={() => window.location.reload()} className="px-10 py-4 bg-slate-900 rounded-2xl text-white font-black tracking-widest uppercase text-[10px] hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10">Submit Another Response</button>
+       <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center mx-auto mb-6 border border-emerald-500/20 shadow-xl shadow-emerald-500/10"><CheckCircle2 className="w-8 h-8 text-emerald-500" /></div>
+       <h2 className="text-3xl font-bold text-slate-900 mb-3 tracking-tight">Submission Successful</h2>
+       <p className="text-slate-500 text-base mb-10">Your response has been securely received. Thank you!</p>
+       <button onClick={() => window.location.reload()} className="px-8 py-3 bg-slate-900 rounded-xl text-white font-medium text-sm hover:bg-slate-800 transition-all shadow-md">Submit Another Response</button>
     </div>
   );
 
@@ -138,66 +138,66 @@ export function FormRenderer({ formId }: { formId: string }) {
 
   return (
     <div className="max-w-2xl mx-auto py-16 px-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
-      <div className="mb-16">
-         <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100 shadow-sm"><FileText className="w-5 h-5" /></div>
-            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-600">Secure Entry</span>
+      <div className="mb-12">
+         <div className="flex items-center gap-3 mb-5">
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100/50 shadow-sm"><FileText className="w-4 h-4" /></div>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-600">Secure Entry</span>
          </div>
-         <h1 className="text-5xl font-black text-slate-900 tracking-tight mb-4">{form.name}</h1>
-         <div className="h-1.5 w-24 bg-emerald-500 rounded-full mb-8 shadow-lg shadow-emerald-500/10" />
-         {form.description && <p className="text-slate-500 font-medium leading-relaxed whitespace-pre-wrap text-lg">{form.description}</p>}
+         <h1 className="text-4xl font-bold text-slate-900 tracking-tight mb-3">{form.name}</h1>
+         <div className="h-1 w-16 bg-emerald-500 rounded-full mb-6" />
+         {form.description && <p className="text-slate-500 font-medium leading-relaxed whitespace-pre-wrap text-base">{form.description}</p>}
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-12">
+      <form onSubmit={handleSubmit} className="space-y-10">
          {visibleFields.map((field) => (
            field.type === 'header' ? (
-             <div key={field.id} className="pt-12 pb-4 border-b-2 border-slate-900 mb-8 mt-16 animate-in fade-in duration-500">
-               <h3 className="text-3xl font-black text-slate-900 tracking-tight uppercase">{field.label}</h3>
+             <div key={field.id} className="pt-10 pb-3 border-b-2 border-slate-900 mb-6 mt-14 animate-in fade-in duration-500">
+               <h3 className="text-2xl font-bold text-slate-900 tracking-tight">{field.label}</h3>
              </div>
            ) : (
-             <div key={field.id} className="space-y-6 group">
+             <div key={field.id} className="space-y-4 group">
                  <label className="flex items-start gap-2">
-                   <span className="text-sm font-semibold text-slate-700 group-focus-within:text-emerald-700 transition-colors leading-snug">{field.label}</span>
-                   {field.required && <span className="text-red-500 font-bold mt-0.5 flex-shrink-0">*</span>}
+                   <span className="text-sm font-medium text-slate-700 leading-snug">{field.label}</span>
+                   {field.required && <span className="text-red-500 font-bold flex-shrink-0">*</span>}
                  </label>
-                {field.type === 'input' && <input type="text" placeholder={field.placeholder} className={cn("w-full bg-white border border-slate-200 rounded-2xl px-6 py-5 text-slate-900 outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/30 transition-all placeholder:text-slate-300 shadow-sm", errors[field.id] && "border-red-300 bg-red-50 focus:border-red-500/30 focus:ring-red-500/10")} value={formData[field.id] || ""} onChange={(e) => handleInputChange(field.id, e.target.value)} />}
-                {field.type === 'textarea' && <textarea placeholder={field.placeholder} className={cn("w-full bg-white border border-slate-200 rounded-2xl px-6 py-5 text-slate-900 outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/30 transition-all placeholder:text-slate-300 h-44 shadow-sm resize-none", errors[field.id] && "border-red-300 bg-red-50 focus:border-red-500/30 focus:ring-red-500/10")} value={formData[field.id] || ""} onChange={(e) => handleInputChange(field.id, e.target.value)} />}
-                {field.type === 'date' && <input type="date" className={cn("w-full bg-white border border-slate-200 rounded-2xl px-6 py-5 text-slate-900 outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/30 transition-all shadow-sm cursor-pointer", errors[field.id] && "border-red-300 bg-red-50 focus:border-red-500/30 focus:ring-red-500/10")} value={formData[field.id] || ""} onChange={(e) => handleInputChange(field.id, e.target.value)} />}
+                {field.type === 'input' && <input type="text" placeholder={field.placeholder} className={cn("w-full bg-white border border-slate-200/60 rounded-xl px-4 py-3.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all placeholder:text-slate-400 shadow-sm", errors[field.id] && "border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20")} value={formData[field.id] || ""} onChange={(e) => handleInputChange(field.id, e.target.value)} />}
+                {field.type === 'textarea' && <textarea placeholder={field.placeholder} className={cn("w-full bg-white border border-slate-200/60 rounded-xl px-4 py-3.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all placeholder:text-slate-400 h-36 shadow-sm resize-none", errors[field.id] && "border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20")} value={formData[field.id] || ""} onChange={(e) => handleInputChange(field.id, e.target.value)} />}
+                {field.type === 'date' && <input type="date" className={cn("w-full bg-white border border-slate-200/60 rounded-xl px-4 py-3.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all shadow-sm cursor-pointer", errors[field.id] && "border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20")} value={formData[field.id] || ""} onChange={(e) => handleInputChange(field.id, e.target.value)} />}
                 {field.type === 'select' && (
                   <div className="space-y-3">
                     <div className="relative">
-                      <select className={cn("w-full bg-white border border-slate-200 rounded-2xl px-6 py-5 text-slate-900 outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/30 appearance-none transition-all cursor-pointer shadow-sm", errors[field.id] && "border-red-300 bg-red-50 focus:border-red-500/30 focus:ring-red-500/10")} value={formData[field.id] || ""} onChange={(e) => handleInputChange(field.id, e.target.value)}>
+                      <select className={cn("w-full bg-white border border-slate-200/60 rounded-xl px-4 py-3.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 appearance-none transition-all cursor-pointer shadow-sm", errors[field.id] && "border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20")} value={formData[field.id] || ""} onChange={(e) => handleInputChange(field.id, e.target.value)}>
                         <option value="" disabled>{field.placeholder || "Select Parameter..."}</option>
                         {field.options?.map((opt, i) => <option key={i} value={opt}>{opt}</option>)}
                       </select>
-                      <ChevronRight className="absolute right-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 rotate-90 pointer-events-none" />
+                      <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 rotate-90 pointer-events-none" />
                     </div>
                     {formData[field.id] === 'Other' && (
-                      <input type="text" placeholder="Please specify..." className="w-full bg-white border border-slate-200 rounded-2xl px-6 py-4 text-slate-900 outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/30 transition-all placeholder:text-slate-300 shadow-sm animate-in fade-in slide-in-from-top-1 duration-200" value={formData[`${field.id}_other`] || ""} onChange={(e) => handleInputChange(`${field.id}_other`, e.target.value)} />
+                      <input type="text" placeholder="Please specify..." className="w-full bg-white border border-slate-200/60 rounded-xl px-4 py-3.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all placeholder:text-slate-400 shadow-sm animate-in fade-in slide-in-from-top-1 duration-200" value={formData[`${field.id}_other`] || ""} onChange={(e) => handleInputChange(`${field.id}_other`, e.target.value)} />
                     )}
                   </div>
                 )}
                 {field.type === 'radio' && (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {field.options?.map((opt, i) => (
-                        <label key={i} className={cn("flex items-center gap-4 p-5 rounded-2xl border transition-all cursor-pointer group/radio", formData[field.id] === opt ? "bg-emerald-50 border-emerald-500 shadow-md shadow-emerald-500/5 text-slate-900" : (errors[field.id] ? "bg-red-50 border-red-200 text-red-700" : "bg-white border-slate-200 text-slate-500 hover:border-emerald-200 shadow-sm"))}>
+                        <label key={i} className={cn("flex items-center gap-3 p-4 rounded-xl border transition-all cursor-pointer group/radio shadow-sm", formData[field.id] === opt ? "bg-emerald-50 border-emerald-500 text-slate-900" : (errors[field.id] ? "bg-red-50 border-red-200 text-red-700" : "bg-white border-slate-200/60 text-slate-600 hover:border-emerald-200"))}>
                           <input type="radio" name={field.id} value={opt} checked={formData[field.id] === opt} onChange={(e) => handleInputChange(field.id, e.target.value)} className="hidden" />
-                          <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all shrink-0", formData[field.id] === opt ? "border-emerald-500 bg-white" : (errors[field.id] ? "border-red-400 bg-white" : "border-slate-200 shadow-inner bg-white"))}>{formData[field.id] === opt && <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm" />}</div>
-                          <span className="font-bold text-[13px] tracking-tight">{opt}</span>
+                          <div className={cn("w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all shrink-0", formData[field.id] === opt ? "border-emerald-500 bg-white" : (errors[field.id] ? "border-red-400 bg-white" : "border-slate-300 bg-white"))}>{formData[field.id] === opt && <div className="w-2 h-2 rounded-full bg-emerald-500" />}</div>
+                          <span className="font-medium text-sm">{opt}</span>
                         </label>
                       ))}
                     </div>
                     {formData[field.id] === 'Other' && (
-                      <input type="text" placeholder="Please specify..." className="w-full bg-white border border-slate-200 rounded-2xl px-6 py-4 text-slate-900 outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/30 transition-all placeholder:text-slate-300 shadow-sm animate-in fade-in slide-in-from-top-1 duration-200" value={formData[`${field.id}_other`] || ""} onChange={(e) => handleInputChange(`${field.id}_other`, e.target.value)} />
+                      <input type="text" placeholder="Please specify..." className="w-full bg-white border border-slate-200/60 rounded-xl px-4 py-3.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all placeholder:text-slate-400 shadow-sm animate-in fade-in slide-in-from-top-1 duration-200" value={formData[`${field.id}_other`] || ""} onChange={(e) => handleInputChange(`${field.id}_other`, e.target.value)} />
                     )}
                   </div>
                 )}
                 {field.type === 'image' && (
-                  <div className="space-y-6">
-                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div className="space-y-4">
+                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                         {(formData[field.id] || []).map((imgData: string, idx: number) => (
-                           <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden border border-emerald-100 shadow-sm animate-in zoom-in duration-300">
+                           <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-emerald-100 shadow-sm animate-in zoom-in duration-300">
                               <img src={imgData} alt="Preview" className="w-full h-full object-cover" />
                               <button 
                                 type="button" 
@@ -206,7 +206,7 @@ export function FormRenderer({ formId }: { formId: string }) {
                                    current.splice(idx, 1);
                                    handleInputChange(field.id, current.length > 0 ? current : null);
                                 }} 
-                                className="absolute top-2 right-2 p-1.5 bg-white/90 backdrop-blur shadow-md rounded-lg text-red-500 hover:bg-red-500 hover:text-white transition-all transform hover:scale-110"
+                                className="absolute top-2 right-2 p-1 bg-white/90 backdrop-blur shadow-sm rounded-lg text-red-500 hover:bg-red-500 hover:text-white transition-all transform hover:scale-105"
                               >
                                 <X className="w-4 h-4" />
                               </button>
@@ -215,15 +215,15 @@ export function FormRenderer({ formId }: { formId: string }) {
                         
                         {(!formData[field.id] || formData[field.id].length < 30) && (
                           <label className={cn(
-                            "flex flex-col items-center justify-center aspect-square bg-slate-50 border-2 border-dashed rounded-2xl cursor-pointer hover:bg-emerald-50 hover:border-emerald-300 transition-all shadow-sm",
-                            errors[field.id] ? "border-red-300 bg-red-50" : "border-slate-200"
+                            "flex flex-col items-center justify-center aspect-square bg-slate-50 border-2 border-dashed rounded-xl cursor-pointer hover:bg-emerald-50 hover:border-emerald-300 transition-all shadow-sm",
+                            errors[field.id] ? "border-red-300 bg-red-50" : "border-slate-200/60"
                           )}>
-                            <div className="flex flex-col items-center justify-center text-center p-4">
-                               <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-slate-300 shadow-sm mb-3">
-                                  <Upload className="w-5 h-5" />
+                            <div className="flex flex-col items-center justify-center text-center p-3">
+                               <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-slate-400 shadow-sm mb-2">
+                                  <Upload className="w-4 h-4" />
                                </div>
-                               <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Upload Image</p>
-                               <p className="text-[8px] text-slate-400 font-bold uppercase tracking-tighter mt-1">
+                               <p className="text-[11px] font-medium text-slate-900 uppercase tracking-wider">Upload Image</p>
+                               <p className="text-[10px] text-slate-500 font-medium mt-1">
                                   {formData[field.id]?.length || 0} / 30 MAX
                                </p>
                             </div>
@@ -278,14 +278,14 @@ export function FormRenderer({ formId }: { formId: string }) {
                      </div>
                   </div>
                 )}
-                {errors[field.id] && <p className="text-[10px] font-black uppercase tracking-[0.2em] text-red-500 pl-4 animate-in fade-in duration-300">{errors[field.id]}</p>}
+                {errors[field.id] && <p className="text-sm font-medium text-red-500 pl-1 animate-in fade-in duration-300">{errors[field.id]}</p>}
 
              </div>
            )
          ))}
-         <div className="pt-10">
-            <button type="submit" disabled={submitting} className="w-full bg-slate-900 py-6 rounded-3xl flex items-center justify-center gap-4 text-white font-black shadow-2xl shadow-slate-900/10 hover:bg-slate-800 hover:scale-[1.01] active:scale-[0.98] transition-all disabled:opacity-50 group tracking-[0.2em] text-lg">
-              {submitting ? <Loader2 className="w-6 h-6 animate-spin text-emerald-500" /> : <>SUBMIT</>}
+         <div className="pt-8">
+            <button type="submit" disabled={submitting} className="w-full bg-slate-900 py-4 rounded-xl flex items-center justify-center gap-3 text-white font-semibold text-base shadow-md hover:bg-slate-800 transition-all disabled:opacity-50 group">
+              {submitting ? <Loader2 className="w-5 h-5 animate-spin text-emerald-500" /> : <>Submit Response</>}
             </button>
          </div>
       </form>

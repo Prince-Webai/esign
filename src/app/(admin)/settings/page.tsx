@@ -103,13 +103,13 @@ export default function SettingsPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6 lg:space-y-8">
       {/* Page Header */}
-      <div className="flex items-center gap-3 pb-6 border-b border-slate-200">
-        <div className="w-12 h-12 rounded-xl bg-orange-500/10 text-orange-500 flex items-center justify-center">
-          <Settings className="w-6 h-6" />
+      <div className="flex items-center gap-4 pb-6 border-b border-slate-200/60">
+        <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200/60 text-slate-500 flex items-center justify-center shadow-sm">
+          <Settings className="w-5 h-5" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Organization Settings</h1>
-          <p className="text-muted-foreground">Manage your company branding and email templates.</p>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Organization Settings</h1>
+          <p className="text-sm font-medium text-slate-500 mt-0.5">Manage your company branding and email templates.</p>
         </div>
       </div>
 
@@ -118,80 +118,80 @@ export default function SettingsPage() {
       ) : (
         <div className="space-y-6 animate-in fade-in duration-500">
           {/* Branding Card */}
-          <div className="bg-white border border-slate-200 shadow-sm rounded-3xl p-6 lg:p-8 space-y-8">
-            <h2 className="text-lg font-bold text-slate-900">Branding</h2>
+          <div className="bg-white border border-slate-200/60 shadow-sm rounded-2xl p-6 lg:p-8 space-y-6">
+            <h2 className="text-lg font-semibold text-slate-900">Branding</h2>
 
             {/* Organization Name */}
-            <div className="space-y-3">
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Organization Name</label>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Organization Name</label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold"
+                className="w-full bg-white shadow-sm border border-slate-200/60 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-medium"
                 placeholder="e.g. TRE Energy"
               />
-              <p className="text-xs text-slate-400">Appears on login page, dashboard headers, and PDFs.</p>
+              <p className="text-xs text-slate-500">Appears on login page, dashboard headers, and PDFs.</p>
             </div>
 
             <div className="w-full h-px bg-slate-100" />
 
             {/* Organization Logo */}
             <div className="space-y-3">
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Organization Logo</label>
+              <label className="text-sm font-medium text-slate-700">Organization Logo</label>
               <div className="flex flex-col sm:flex-row gap-6 items-start">
-                <div className="w-32 h-32 flex-shrink-0 bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl flex items-center justify-center relative group overflow-hidden">
+                <div className="w-24 h-24 flex-shrink-0 bg-slate-50 border-2 border-dashed border-slate-200/60 rounded-xl flex items-center justify-center relative group overflow-hidden">
                   {logoPreview ? (
                     <>
                       <div className="absolute inset-0 pattern-checkboard opacity-10 pointer-events-none" />
                       <img src={logoPreview} alt="Logo preview" className="w-full h-full object-contain p-2 relative z-10" />
-                      <button onClick={clearLogo} className="absolute top-2 right-2 w-6 h-6 bg-white/90 shadow rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20 text-red-500 hover:bg-red-50">
-                        <X className="w-4 h-4" />
+                      <button onClick={clearLogo} className="absolute top-1.5 right-1.5 w-6 h-6 bg-white/90 shadow-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20 text-red-500 hover:bg-red-50">
+                        <X className="w-3.5 h-3.5" />
                       </button>
                     </>
                   ) : (
-                    <ImageIcon className="w-8 h-8 text-slate-300" />
+                    <ImageIcon className="w-6 h-6 text-slate-300" />
                   )}
                 </div>
-                <div className="flex-1 space-y-4">
-                  <div onClick={() => fileInputRef.current?.click()} className="w-full sm:max-w-xs border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors p-4 rounded-xl flex items-center justify-center gap-3 cursor-pointer group">
-                    <UploadCloud className="w-5 h-5 text-slate-400 group-hover:text-primary transition-colors" />
-                    <span className="text-sm font-semibold text-slate-700">Choose custom logo...</span>
+                <div className="flex-1 space-y-3">
+                  <div onClick={() => fileInputRef.current?.click()} className="w-full sm:max-w-xs border border-slate-200/60 bg-white hover:bg-slate-50 shadow-sm transition-colors p-2.5 rounded-xl flex items-center justify-center gap-2 cursor-pointer group">
+                    <UploadCloud className="w-4 h-4 text-slate-400 group-hover:text-emerald-500 transition-colors" />
+                    <span className="text-sm font-medium text-slate-700">Choose custom logo...</span>
                   </div>
                   <input type="file" ref={fileInputRef} className="hidden" accept="image/png, image/jpeg, image/svg+xml" onChange={handleFileChange} />
-                  <p className="text-xs text-slate-400 leading-relaxed">Upload a PNG or SVG with a transparent background. This logo will be embedded in all newly generated PDFs.</p>
+                  <p className="text-xs text-slate-500 leading-relaxed max-w-sm">Upload a PNG or SVG with a transparent background. This logo will be embedded in all newly generated PDFs.</p>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Email Template Card */}
-          <div className="bg-white border border-slate-200 shadow-sm rounded-3xl p-6 lg:p-8 space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center">
+          <div className="bg-white border border-slate-200/60 shadow-sm rounded-2xl p-6 lg:p-8 space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-200/60 shadow-sm">
                   <Mail className="w-5 h-5" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-slate-900">Signing Email Template</h2>
-                  <p className="text-xs text-slate-400">Settings for the RAMS document launch email.</p>
+                  <h2 className="text-lg font-semibold text-slate-900">Signing Email Template</h2>
+                  <p className="text-sm font-medium text-slate-500 mt-0.5">Settings for the RAMS document launch email.</p>
                 </div>
               </div>
 
               {/* Format Toggle */}
-              <div className="flex bg-slate-100 p-1 rounded-xl">
+              <div className="flex bg-slate-50 border border-slate-200/60 p-1 rounded-xl shadow-sm">
                 <button 
                   onClick={() => setEmailFormat('text')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${emailFormat === 'text' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${emailFormat === 'text' ? 'bg-white shadow-sm text-slate-900 border border-slate-200/60' : 'text-slate-500 hover:text-slate-700'}`}
                 >
-                  <Type className="w-3 h-3" />
+                  <Type className="w-3.5 h-3.5" />
                   Plain Text
                 </button>
                 <button 
                   onClick={() => setEmailFormat('html')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${emailFormat === 'html' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${emailFormat === 'html' ? 'bg-white shadow-sm text-slate-900 border border-slate-200/60' : 'text-slate-500 hover:text-slate-700'}`}
                 >
-                  <Code className="w-3 h-3" />
+                  <Code className="w-3.5 h-3.5" />
                   HTML
                 </button>
               </div>
@@ -200,36 +200,36 @@ export default function SettingsPage() {
             {/* Variable hints */}
             <div className="flex flex-wrap gap-2 pt-2">
               {['{{signer_name}}', '{{document_name}}', '{{signing_link}}'].map(v => (
-                <span key={v} className="text-[10px] font-mono bg-blue-50 text-blue-600 border border-blue-200 px-2 py-1 rounded-md">{v}</span>
+                <span key={v} className="text-xs font-mono font-medium bg-slate-50 text-slate-600 border border-slate-200/60 px-2 py-1 rounded-md">{v}</span>
               ))}
-              <span className="text-[10px] text-slate-400 self-center">← available variables</span>
+              <span className="text-xs font-medium text-slate-500 self-center ml-2">← available variables</span>
             </div>
 
             {/* Email Subject */}
             <div className="space-y-2">
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Email Subject</label>
+              <label className="text-sm font-medium text-slate-700">Email Subject</label>
               <input
                 type="text"
                 value={emailSubject}
                 onChange={(e) => setEmailSubject(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all text-slate-900"
+                className="w-full bg-white shadow-sm border border-slate-200/60 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all text-slate-900 font-medium placeholder:text-slate-400"
                 placeholder="E-Signature Required: {{document_name}}"
               />
             </div>
 
             {/* Email Body */}
             <div className="space-y-2">
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+              <label className="text-sm font-medium text-slate-700">
                 Email Body {emailFormat === 'html' ? '(HTML Code)' : '(Text Content)'}
               </label>
               <textarea
                 value={emailBody}
                 onChange={(e) => setEmailBody(e.target.value)}
                 rows={12}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all text-slate-900 font-mono leading-relaxed resize-y"
+                className="w-full bg-white shadow-sm border border-slate-200/60 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all text-slate-900 font-mono leading-relaxed resize-y placeholder:text-slate-400"
                 placeholder={emailFormat === 'html' ? "Enter HTML code here..." : "Write your email message here..."}
               />
-              <p className="text-xs text-slate-400">
+              <p className="text-xs font-medium text-slate-500">
                 {emailFormat === 'text' 
                   ? "We'll automatically handle line breaks and add a branding wrapper." 
                   : "Your HTML will be rendered exactly as entered. Make sure to include all necessary styling."}
@@ -239,22 +239,22 @@ export default function SettingsPage() {
             {/* Reset to default */}
             <button
               onClick={() => { setEmailSubject(DEFAULT_SUBJECT); setEmailBody(DEFAULT_BODY); setEmailFormat('text'); }}
-              className="text-xs text-slate-400 hover:text-slate-600 underline underline-offset-2 transition-colors"
+              className="text-sm font-medium text-slate-500 hover:text-slate-900 underline underline-offset-4 transition-colors pt-2"
             >
               Reset to default template
             </button>
           </div>
 
           {/* Save Bar */}
-          <div className="bg-white border border-slate-200 shadow-sm rounded-2xl px-6 py-4 flex items-center justify-between">
+          <div className="bg-white border border-slate-200/60 shadow-sm rounded-2xl px-6 py-4 flex flex-col-reverse md:flex-row items-center justify-between gap-4">
             {message ? (
-              <p className={`text-sm font-bold flex-1 ${message.type === 'error' ? 'text-red-500' : 'text-emerald-600'}`}>{message.text}</p>
+              <p className={`text-sm font-medium flex-1 ${message.type === 'error' ? 'text-red-500' : 'text-emerald-600'}`}>{message.text}</p>
             ) : <div className="flex-1" />}
 
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="flex items-center gap-2 px-8 py-3 bg-primary text-primary-foreground font-bold rounded-xl shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all active:scale-95 disabled:opacity-50"
+              className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl shadow-sm transition-colors disabled:opacity-50"
             >
               {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               Save All Settings

@@ -82,22 +82,15 @@ export default function Dashboard() {
     <div className="space-y-8 p-4 md:p-8 max-w-7xl mx-auto animate-in fade-in slide-in-from-top-4 duration-700">
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-6 bg-white p-6 md:p-8 rounded-2xl border border-slate-200/60 shadow-sm">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-1 text-slate-900">Project Hub</h1>
-          <p className="text-slate-500 text-sm">Manage your RAMS documents and track signatures in real-time.</p>
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-2 text-slate-900">Project Hub</h1>
+          <p className="text-slate-500 text-base">Manage your RAMS documents and track signatures in real-time.</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
           <Link 
-            href="/templates/new"
-            className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 font-medium transition-colors text-sm text-slate-700 shadow-sm"
-          >
-            <Plus className="w-4 h-4" />
-            Create Template
-          </Link>
-          <Link 
             href="/rams/new"
-            className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 text-white font-medium shadow-sm hover:bg-emerald-700 transition-colors text-sm"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 text-white font-medium shadow-sm hover:bg-emerald-700 transition-colors text-base"
           >
-            <FileUp className="w-4 h-4" />
+            <FileUp className="w-5 h-5" />
             Launch RAMS
           </Link>
         </div>
@@ -112,12 +105,12 @@ export default function Dashboard() {
           <div key={stat.label} className="p-6 rounded-2xl bg-white border border-slate-200/60 shadow-sm transition-all hover:shadow-md group">
             <div className="flex justify-between items-start mb-6">
               <div className={cn("p-3 rounded-xl transition-transform border", stat.bg, stat.color, stat.border)}>
-                <stat.icon className="w-5 h-5" />
+                <stat.icon className="w-6 h-6" />
               </div>
-              <span className="text-[10px] font-medium text-slate-500 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-100">Live Status</span>
+              <span className="text-xs font-medium text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">Live Status</span>
             </div>
-            <p className="text-3xl font-bold tracking-tight mb-1 text-slate-900">{stat.value}</p>
-            <p className="text-sm font-medium text-slate-500">{stat.label}</p>
+            <p className="text-4xl font-bold tracking-tight mb-1 text-slate-900">{stat.value}</p>
+            <p className="text-base font-semibold text-slate-500">{stat.label}</p>
           </div>
         ))}
       </div>
@@ -141,10 +134,10 @@ export default function Dashboard() {
           <table className="w-full text-left min-w-[900px]">
             <thead>
               <tr className="border-b border-slate-200/60 bg-slate-50/50">
-                <th className="px-6 py-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Document</th>
-                <th className="px-6 py-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Progress</th>
-                <th className="px-6 py-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Status</th>
-                <th className="px-6 py-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 text-right pr-6">Actions</th>
+                <th className="px-6 py-5 text-xs font-bold uppercase tracking-wider text-slate-500">Document</th>
+                <th className="px-6 py-5 text-xs font-bold uppercase tracking-wider text-slate-500">Progress</th>
+                <th className="px-6 py-5 text-xs font-bold uppercase tracking-wider text-slate-500">Status</th>
+                <th className="px-6 py-5 text-xs font-bold uppercase tracking-wider text-slate-500 text-right pr-6">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -154,22 +147,22 @@ export default function Dashboard() {
                 <tr key={doc.id} className="hover:bg-slate-50/50 transition-all group">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:text-emerald-600 group-hover:bg-emerald-50 transition-all duration-300">
-                        <FileText className="w-5 h-5" />
+                      <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:text-emerald-600 group-hover:bg-emerald-50 transition-all duration-300">
+                        <FileText className="w-6 h-6" />
                       </div>
-                      <div className="min-w-0">
-                        <p className="font-semibold text-slate-900 text-sm truncate max-w-[240px]">{doc.name}</p>
-                        <p className="text-xs text-slate-500 mt-0.5">Job #{doc.servicem8_job_id}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-slate-900 text-base truncate max-w-[280px]">{doc.name}</p>
+                        <p className="text-sm text-slate-500 mt-1">Job #{doc.servicem8_job_id}</p>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="space-y-2 w-48">
-                      <div className="flex justify-between text-[10px] font-medium text-slate-500">
+                      <div className="flex justify-between text-xs font-semibold text-slate-500">
                         <span>{doc.signers.filter((s:any) => s.status === 'signed').length} / {doc.signers.length} Validated</span>
                         <span>{Math.round((doc.signers.filter((s:any) => s.status === 'signed').length / (doc.signers.length || 1)) * 100)}%</span>
                       </div>
-                      <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
                         <div 
                           className="h-full bg-emerald-500 transition-all duration-700 ease-out" 
                           style={{ width: `${(doc.signers.filter((s:any) => s.status === 'signed').length / (doc.signers.length || 1)) * 100}%` }}
@@ -179,7 +172,7 @@ export default function Dashboard() {
                   </td>
                   <td className="px-6 py-4">
                     <span className={cn(
-                      "inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium border transition-colors duration-300",
+                      "inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors duration-300",
                       doc.signers.every((s:any) => s.status === 'signed') 
                         ? "bg-emerald-50 text-emerald-600 border-emerald-100" 
                         : "bg-amber-50 text-amber-600 border-amber-100"
@@ -191,7 +184,7 @@ export default function Dashboard() {
                     <div className="flex items-center justify-end gap-2 pr-4">
                         <Link 
                           href={`/rams/${doc.id}/view`}
-                          className="px-3 py-1.5 bg-white text-slate-600 text-xs font-medium rounded-lg border border-slate-200 hover:bg-slate-50 hover:text-slate-900 transition-all shadow-sm"
+                          className="px-4 py-2 bg-white text-slate-700 text-sm font-semibold rounded-lg border border-slate-200/60 hover:bg-slate-50 hover:text-slate-900 transition-all shadow-sm"
                         >
                           View
                         </Link>
@@ -199,16 +192,16 @@ export default function Dashboard() {
                           <a 
                             href={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/rams/${doc.final_file_path}`}
                             download
-                            className="px-3 py-1.5 bg-emerald-50 text-emerald-600 text-xs font-medium rounded-lg border border-emerald-100 hover:bg-emerald-500 hover:text-white transition-all"
+                            className="px-4 py-2 bg-emerald-50 text-emerald-700 text-sm font-semibold rounded-lg border border-emerald-200/60 hover:bg-emerald-100 hover:text-emerald-800 transition-all shadow-sm"
                           >
                             PDF
                           </a>
                         )}
                       <button 
                         onClick={() => deleteRams(doc.id, doc.name, doc.servicem8_job_id)}
-                        className="p-3 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-100"
+                        className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all border border-transparent hover:border-red-100 shadow-sm"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-5 h-5" />
                       </button>
                     </div>
                   </td>
@@ -217,8 +210,8 @@ export default function Dashboard() {
             </tbody>
           </table>
           {!loading && rams.length === 0 && (
-            <div className="py-32 text-center text-slate-400 font-bold uppercase tracking-widest text-xs flex flex-col items-center gap-4">
-               <FileText className="w-12 h-12 text-slate-300" />
+            <div className="py-32 text-center text-slate-400 font-bold uppercase tracking-widest text-sm flex flex-col items-center gap-4">
+               <FileText className="w-14 h-14 text-slate-300" />
                No records found in active set
             </div>
           )}

@@ -280,7 +280,7 @@ export default function SigningPage({ token }: { token: string }) {
       <header className="h-16 border-b border-slate-200 flex items-center justify-between px-6 bg-white/80 backdrop-blur-md z-30">
         <div className="flex items-center gap-3">
           {org.logo_url ? (
-            <img src={org.logo_url} alt={org.name} className="h-8 max-w-[120px] object-contain" />
+            <img src={org.logo_url} alt={org.name} className="h-12 max-w-[180px] object-contain" />
           ) : (
             <div className="w-8 h-8 rounded-lg premium-gradient flex items-center justify-center font-bold text-white text-[10px]">TRE</div>
           )}
