@@ -79,17 +79,17 @@ export async function POST(req: NextRequest) {
             });
           }
 
-          // ── 1.6 Automatic Name Stamp (20pt left of signature) ─────────────
+          // ── 1.6 Automatic Name Stamp (40pt left of signature) ─────────────
           const stampName = signer.name_text || signer.name;
           if (stampName) {
-            const stampSize = 7;
+            const stampSize = 9;
             const nameWidth = font.widthOfTextAtSize(stampName, stampSize);
             page.drawText(stampName, {
-              x: x - nameWidth - 20,
+              x: x - nameWidth - 40,
               y: y + (fh / 2) - (stampSize / 2) + 1,
               size: stampSize,
               font,
-              color: rgb(0.2, 0.2, 0.2), // Dark gray
+              color: rgb(0, 0, 0), // Pure black for better legibility when bigger
             });
           }
         } catch (e) {
