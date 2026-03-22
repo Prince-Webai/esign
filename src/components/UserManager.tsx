@@ -80,8 +80,16 @@ export function UserManager() {
 
   async function handleDeleteUser(id: string) {
     const { error } = await supabase.from("registered_users").delete().eq("id", id);
-    if (!error) fetchUsers();
-    else alert("Failed to delete: " + error.message);
+    if (!error) {
+      fetchUsers();
+    } else {
+      // Check for foreign key constraint violation (common when user is assigned to documents)
+      if (error.code === '23503') {
+        alert("Cannot delete: This user is assigned to one or more RAMS documents. Please run the Database Fix in Supabase Settings to allow unlinking.");
+      } else {
+        alert("Failed to delete: " + error.message);
+      }
+    }
   }
 
   async function handleUpdatePIN(id: string, pin: string) {

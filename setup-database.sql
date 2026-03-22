@@ -22,7 +22,11 @@ END $$;
 DO $$ 
 BEGIN 
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='signers' AND column_name='assigned_user_id') THEN
-        ALTER TABLE public.signers ADD COLUMN assigned_user_id uuid REFERENCES public.registered_users(id);
+        ALTER TABLE public.signers ADD COLUMN assigned_user_id uuid REFERENCES public.registered_users(id) ON DELETE SET NULL;
+    ELSE
+        -- Update existing constraint if it doesn't have SET NULL
+        ALTER TABLE public.signers DROP CONSTRAINT IF EXISTS signers_assigned_user_id_fkey;
+        ALTER TABLE public.signers ADD CONSTRAINT signers_assigned_user_id_fkey FOREIGN KEY (assigned_user_id) REFERENCES public.registered_users(id) ON DELETE SET NULL;
     END IF;
 END $$;
 
