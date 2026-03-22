@@ -367,7 +367,7 @@ export default function SigningPage({ token }: { token: string }) {
                             key={`${s.id}-name-stamp`}
                             style={{ 
                               position: 'absolute', 
-                              right: `calc(${100 - s.placement_x}% + 40px)`, 
+                              right: `calc(${100 - s.placement_x}% + 60px)`, 
                               top: `${s.placement_y}%`,
                               height: `${s.height}%`,
                               display: 'flex',
@@ -376,7 +376,7 @@ export default function SigningPage({ token }: { token: string }) {
                             }}
                             className="animate-in fade-in slide-in-from-right-2 duration-700 delay-300 pointer-events-none"
                           >
-                            <span className="text-[12px] font-bold text-slate-900 whitespace-nowrap bg-white/40 px-1.5 py-0.5 rounded backdrop-blur-[1px]">
+                            <span className="text-[18px] font-black text-slate-900 whitespace-nowrap bg-white/40 px-2 py-1 rounded backdrop-blur-[1px] shadow-sm">
                               {nameToPrint}
                             </span>
                           </div>
