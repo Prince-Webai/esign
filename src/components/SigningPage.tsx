@@ -337,6 +337,27 @@ export default function SigningPage({ token }: { token: string }) {
                           <img src={s.signature_data} className="w-full h-full object-contain mix-blend-multiply" />
                         </div>
                       );
+
+                      if (s.signed_at) {
+                        elements.push(
+                          <div 
+                            key={`${s.id}-date-stamp`}
+                            style={{ 
+                              position: 'absolute', 
+                              left: `calc(${s.placement_x + s.width}% + 10px)`, 
+                              top: `${s.placement_y}%`,
+                              height: `${s.height}%`,
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}
+                            className="animate-in fade-in slide-in-from-left-2 duration-700 delay-300 pointer-events-none"
+                          >
+                            <span className="text-[10px] font-bold text-slate-900 whitespace-nowrap bg-white/40 px-1 rounded backdrop-blur-[1px]">
+                              {new Date(s.signed_at).toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "2-digit" }).replace(/\//g, " ")}
+                            </span>
+                          </div>
+                        );
+                      }
                     }
                     
                     return elements;

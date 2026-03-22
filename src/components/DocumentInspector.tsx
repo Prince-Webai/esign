@@ -176,10 +176,27 @@ export function DocumentInspector({ ramsId }: { ramsId: string }) {
                       )}
                     >
                       {signer.signature_data ? (
-                        <img
-                          src={signer.signature_data}
-                          className="w-full h-full object-contain mix-blend-multiply"
-                        />
+                        <div className="relative w-full h-full">
+                          <img
+                            src={signer.signature_data}
+                            className="w-full h-full object-contain mix-blend-multiply"
+                          />
+                          {signer.signed_at && (
+                            <div 
+                              style={{ 
+                                position: 'absolute', 
+                                left: `calc(100% + 10px)`, 
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                              }}
+                              className="animate-in fade-in slide-in-from-left-2 duration-700 delay-300 pointer-events-none"
+                            >
+                              <span className="text-[10px] font-bold text-slate-900 whitespace-nowrap bg-white/40 px-1 rounded backdrop-blur-[1px]">
+                                {new Date(signer.signed_at).toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "2-digit" }).replace(/\//g, " ")}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       ) : (
                         <>
                           <div className="absolute -top-6 left-0 bg-emerald-500 text-white text-[9px] font-black px-2 py-0.5 rounded-t-md uppercase tracking-widest whitespace-nowrap shadow-sm">

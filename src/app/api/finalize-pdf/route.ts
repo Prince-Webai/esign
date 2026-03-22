@@ -62,6 +62,22 @@ export async function POST(req: NextRequest) {
 
           const img = await pdfDoc.embedPng(signer.signature_data);
           page.drawImage(img, { x, y, width: fw, height: fh });
+
+          // ── 1.5 Automatic Date Stamp (10pt right of signature) ─────────────
+          if (signer.signed_at) {
+            const stampDate = new Date(signer.signed_at)
+              .toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "2-digit" })
+              .replace(/\//g, " ");
+            
+            const stampSize = 7;
+            page.drawText(stampDate, {
+              x: x + fw + 10,
+              y: y + (fh / 2) - (stampSize / 2) + 1,
+              size: stampSize,
+              font,
+              color: rgb(0.2, 0.2, 0.2), // Dark gray
+            });
+          }
         } catch (e) {
           console.error("Sig error:", e);
         }
