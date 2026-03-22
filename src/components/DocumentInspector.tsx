@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { supabase } from "@/lib/supabase";
-import { Check, Loader2, FileText, Download } from "lucide-react";
+import { Check, Loader2, FileText, Download, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
@@ -14,6 +14,7 @@ export function DocumentInspector({ ramsId }: { ramsId: string }) {
   const [allSigners, setAllSigners] = useState<any[]>([]);
   const [numPages, setNumPages] = useState(0);
   const [containerWidth, setContainerWidth] = useState<number>(800);
+  const [isRegenerating, setIsRegenerating] = useState(false);
   const parentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -62,6 +63,32 @@ export function DocumentInspector({ ramsId }: { ramsId: string }) {
     }
     init();
   }, [ramsId]);
+
+  async function handleRegenerate() {
+     setIsRegenerating(true);
+     try {
+        const res = await fetch('/api/finalize-pdf', {
+           method: 'POST',
+           headers: { 'Content-Type': 'application/json' },
+           body: JSON.stringify({ ramsId })
+        });
+        const data = await res.json();
+        if (data.success) {
+           const { data: updatedDoc } = await supabase
+             .from("rams_documents")
+             .select("*")
+             .eq("id", ramsId)
+             .single();
+           if (updatedDoc) setDocument(updatedDoc);
+        } else {
+           alert("Regeneration failed: " + (data.error || "Unknown error"));
+        }
+     } catch (err: any) {
+        alert("Error: " + err.message);
+     } finally {
+        setIsRegenerating(false);
+     }
+  }
 
   if (loading) {
     return (
@@ -114,7 +141,7 @@ export function DocumentInspector({ ramsId }: { ramsId: string }) {
             </div>
 
             {document.status === 'completed' && (
-              <div className="pt-4">
+              <div className="pt-4 space-y-3">
                 <a
                   href={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/rams/${document.final_file_path}?t=${new Date().getTime()}`}
                   target="_blank"
@@ -124,6 +151,19 @@ export function DocumentInspector({ ramsId }: { ramsId: string }) {
                   <Download className="w-4 h-4" />
                   Download Signed PDF
                 </a>
+                
+                <button
+                  onClick={handleRegenerate}
+                  disabled={isRegenerating}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-800 text-slate-200 text-[10px] font-bold uppercase tracking-widest rounded-xl hover:bg-slate-700 transition-colors disabled:opacity-50"
+                >
+                  {isRegenerating ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <RotateCcw className="w-3 h-3" />
+                  )}
+                  Regenerate Final PDF
+                </button>
               </div>
             )}
           </div>
@@ -193,6 +233,21 @@ export function DocumentInspector({ ramsId }: { ramsId: string }) {
                             >
                               <span className="text-[10px] font-bold text-slate-900 whitespace-nowrap bg-white/40 px-1 rounded backdrop-blur-[1px]">
                                 {new Date(signer.signed_at).toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "2-digit" }).replace(/\//g, " ")}
+                              </span>
+                            </div>
+                          )}
+                          {(signer.name_text || signer.name) && (
+                            <div 
+                              style={{ 
+                                position: 'absolute', 
+                                right: `calc(100% + 20px)`, 
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                              }}
+                              className="animate-in fade-in slide-in-from-right-2 duration-700 delay-300 pointer-events-none"
+                            >
+                              <span className="text-[10px] font-bold text-slate-900 whitespace-nowrap bg-white/40 px-1 rounded backdrop-blur-[1px]">
+                                {signer.name_text || signer.name}
                               </span>
                             </div>
                           )}

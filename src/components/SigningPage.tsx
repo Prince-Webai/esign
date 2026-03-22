@@ -358,6 +358,30 @@ export default function SigningPage({ token }: { token: string }) {
                           </div>
                         );
                       }
+
+                      // 1.6 Automatic Name Stamp (20px left of signature)
+                      const nameToPrint = s.name_text || s.name;
+                      if (nameToPrint) {
+                        elements.push(
+                          <div 
+                            key={`${s.id}-name-stamp`}
+                            style={{ 
+                              position: 'absolute', 
+                              right: `calc(${100 - s.placement_x}% + 20px)`, 
+                              top: `${s.placement_y}%`,
+                              height: `${s.height}%`,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'flex-end'
+                            }}
+                            className="animate-in fade-in slide-in-from-right-2 duration-700 delay-300 pointer-events-none"
+                          >
+                            <span className="text-[10px] font-bold text-slate-900 whitespace-nowrap bg-white/40 px-1 rounded backdrop-blur-[1px]">
+                              {nameToPrint}
+                            </span>
+                          </div>
+                        );
+                      }
                     }
                     
                     return elements;
