@@ -39,35 +39,66 @@ export function UserManager() {
 
   async function handleAddUser(e: React.FormEvent) {
     e.preventDefault();
-    if (!newName || !newEmail || !newPIN) return;
+    
+    // 1. Basic Field Validation
+    if (!newName.trim()) {
+      alert("Please enter a name.");
+      return;
+    }
+    if (!newEmail.trim()) {
+      alert("Please enter an email address.");
+      return;
+    }
+    if (!newPIN || newPIN.length < 4) {
+      alert("Please enter a 4-digit security PIN.");
+      return;
+    }
+
+    // 2. Email Format Validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newEmail)) {
+      alert("Please enter a valid email address.");
+      return;
+    }
 
     setIsAdding(true);
     
     const userData: any = { 
-      name: newName, 
-      email: newEmail, 
+      name: newName.trim(), 
+      email: newEmail.trim().toLowerCase(), 
       password_hash: newPIN 
     };
 
-    const { error: initialError } = await supabase
-      .from("registered_users")
-      .insert([{ ...userData, role: newRole }]);
-
-    if (initialError) {
-      const { error: retryError } = await supabase
+    try {
+      const { error: initialError } = await supabase
         .from("registered_users")
-        .insert([userData]);
+        .insert([{ ...userData, role: newRole }]);
 
-      if (retryError) {
-        alert("Error adding user: " + retryError.message);
-      } else {
-        alert("User added! Reminder: Run setup-database.sql for full role features.");
-        resetForm();
+      if (initialError) {
+        // If initial attempt fails (likely due to missing 'role' column in some versions), retry without it
+        const { error: retryError } = await supabase
+          .from("registered_users")
+          .insert([userData]);
+
+        if (retryError) {
+          if (retryError.code === '23505') {
+            alert("This email is already registered. Please use a different email or delete the existing account.");
+          } else {
+            alert("Error adding user: " + retryError.message);
+          }
+          setIsAdding(false);
+          return;
+        }
       }
-    } else {
+      
+      // Success
+      alert("User added successfully!");
       resetForm();
+    } catch (err: any) {
+      alert("An unexpected error occurred: " + err.message);
+    } finally {
+      setIsAdding(false);
     }
-    setIsAdding(false);
   }
 
   const resetForm = () => {
