@@ -38,8 +38,7 @@ export async function POST(req: NextRequest) {
     const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
     const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-    // Calculate Dynamic Header Height
-    const headerLeft = 50;
+    // Calculate Dynamic Header Height (now centered)
     const headerTitle = 'FORM SUBMISSION';
     const formName = form.name.toUpperCase();
     
@@ -52,44 +51,55 @@ export async function POST(req: NextRequest) {
         const logoBuffer = await logoRes.arrayBuffer();
         const isPng = orgLogoUrl.toLowerCase().includes('.png') || orgLogoUrl.includes('image/png');
         logoImage = isPng ? await pdfDoc.embedPng(logoBuffer) : await pdfDoc.embedJpg(logoBuffer);
-        const scale = Math.min(150 / logoImage.width, 60 / logoImage.height);
+        // Slightly larger logo for clarity, still within bounds
+        const scale = Math.min(180 / logoImage.width, 70 / logoImage.height);
         logoDims = logoImage.scale(scale);
       } catch (err) { console.error('Failed to embed org logo', err); }
     }
 
-    const textLeft = headerLeft + (logoDims ? logoDims.width + 20 : 0);
-    const headerMaxWidth = width - textLeft - 50;
-
-    // We'll draw elements starting from the top and keep track of where we end
-    let headerY = height - 50; 
-    console.log(`[PDF] Starting header at Y: ${headerY}, textLeft: ${textLeft}`);
-
-    // Draw "FORM SUBMISSION" (one line is usually safe here)
-    page.drawText(headerTitle, { x: textLeft, y: headerY, size: 20, font, color: rgb(1, 1, 1) });
-    headerY -= 26;
+    // First, calculate the height needed for the centered header
+    const headerCenteringX = 0; // The drawWrappedText will handle centering within maxWidth
+    const headerMaxWidth = width - 100;
     
-    // Draw wrapped form name and get the new Y
-    const endTitleY = drawWrappedText(page, formName, textLeft, headerY, 12, regularFont, headerMaxWidth, 16, rgb(0.8, 0.9, 0.8));
-    console.log(`[PDF] Header text ended at Y: ${endTitleY}, maxWidth: ${headerMaxWidth}`);
+    let headerTestY = height - 50;
+    if (logoDims) headerTestY -= (logoDims.height + 20);
+    headerTestY -= 26; // For headerTitle
+    const endTitleY = drawWrappedText(page, formName, 50, headerTestY, 12, regularFont, headerMaxWidth, 16, rgb(0.2, 0.2, 0.2), 'center');
     
-    // Calculate required header height based on where the title ended
-    const headerBottomBorder = Math.min(height - 120, endTitleY - 20);
+    const headerBottomBorder = Math.min(height - 160, endTitleY - 30);
     const actualHeaderHeight = height - headerBottomBorder;
-    console.log(`[PDF] Header bottom border: ${headerBottomBorder}, actual height: ${actualHeaderHeight}`);
 
-    // RE-DRAWING LOGIC (Actually drawing on the green bar):
-    page.drawRectangle({ x: 0, y: headerBottomBorder, width, height: actualHeaderHeight, color: rgb(0.02, 0.59, 0.41) });
+    // Draw Background Rectangle
+    page.drawRectangle({ x: 0, y: headerBottomBorder, width, height: actualHeaderHeight, color: rgb(0.976, 0.976, 0.976) });
+
+    // Draw Elements Centered
+    let currentHeaderY = height - 40;
+    
     if (logoImage && logoDims) {
-      page.drawImage(logoImage, { x: 50, y: height - 50 - logoDims.height / 2, width: logoDims.width, height: logoDims.height });
+      page.drawImage(logoImage, { 
+        x: (width - logoDims.width) / 2, 
+        y: currentHeaderY - logoDims.height, 
+        width: logoDims.width, 
+        height: logoDims.height 
+      });
+      currentHeaderY -= (logoDims.height + 20);
     }
-    page.drawText(headerTitle, { x: textLeft, y: height - 50, size: 20, font, color: rgb(1, 1, 1) });
-    drawWrappedText(page, formName, textLeft, height - 76, 12, regularFont, headerMaxWidth, 16, rgb(0.8, 0.9, 0.8));
 
-    let currentY = headerBottomBorder - 40;
-    page.drawText(`Submission ID: ${submissionId}`, { x: 50, y: currentY, size: 10, font: regularFont, color: rgb(0.4, 0.4, 0.4) });
+    const titleWidth = font.widthOfTextAtSize(headerTitle, 20);
+    page.drawText(headerTitle, { 
+      x: (width - titleWidth) / 2, 
+      y: currentHeaderY, 
+      size: 20, 
+      font, 
+      color: rgb(0, 0, 0) 
+    });
+    currentHeaderY -= 26;
+
+    drawWrappedText(page, formName, 50, currentHeaderY, 12, regularFont, headerMaxWidth, 16, rgb(0.2, 0.2, 0.2), 'center');
+
+    let currentY = headerBottomBorder - 25;
+    // Removed Submission ID and Timestamp as requested
     currentY -= 15;
-    page.drawText(`Timestamp: ${new Date().toLocaleString()}`, { x: 50, y: currentY, size: 10, font: regularFont, color: rgb(0.4, 0.4, 0.4) });
-    currentY -= 20;
 
     if (form.description) {
       currentY = drawWrappedText(page, form.description, 50, currentY, 10, regularFont, 500, 14, rgb(0.4, 0.4, 0.4));
@@ -174,24 +184,24 @@ export async function POST(req: NextRequest) {
       for (const field of fields) {
         if (field.type === 'header') {
           // Add significant top margin before a new section
-          currentY -= 45;
+          currentY -= 40;
           
           // Ensure enough space for Header Line + Header Text + at least one field label
           checkPage(80);
           
-          // Draw Section Line
+          // Draw Section Line - shifted up for better spacing
           page.drawLine({ 
-            start: { x: 50, y: currentY + 15 }, 
-            end: { x: 550, y: currentY + 15 }, 
-            thickness: 1.5, 
+            start: { x: 50, y: currentY + 20 }, 
+            end: { x: 550, y: currentY + 20 }, 
+            thickness: 1, 
             color: rgb(0.2, 0.2, 0.2) 
           });
 
-          // Draw Header Text (Wrapped)
-          currentY = drawWrappedText(page, field.label.toUpperCase(), 50, currentY, 14, font, 500, 18, rgb(0, 0, 0));
+          // Draw Header Text (Wrapped) - slightly smaller for 'less bold' look
+          currentY = drawWrappedText(page, field.label.toUpperCase(), 50, currentY, 11, font, 500, 15, rgb(0, 0, 0));
           
           // Add margin after header
-          currentY -= 25;
+          currentY -= 30;
           continue;
         }
 
@@ -201,8 +211,8 @@ export async function POST(req: NextRequest) {
         // Ensure there is space for the label + a bit of value before drawing
         checkPage(50);
 
-        // Draw Label (Wrapped)
-        currentY = drawWrappedText(page, field.label.toUpperCase(), 50, currentY, 10, font, 500, 14, rgb(0.1, 0.1, 0.1));
+        // Draw Label (Wrapped) - using regularFont for 'less bold' look
+        currentY = drawWrappedText(page, field.label.toUpperCase(), 50, currentY, 10, regularFont, 500, 14, rgb(0.1, 0.1, 0.1));
         
         // Small gap between label and value
         currentY -= 5;
@@ -227,7 +237,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Standard gap after every field
-        currentY -= 20;
+        currentY -= 12;
       }
     }
 
@@ -321,7 +331,7 @@ async function compressBase64Image(base64: string, maxWidth: number, quality: nu
   }
 }
 
-function drawWrappedText(page: any, text: string, x: number, y: number, size: number, font: any, maxWidth: number, lineHeight: number, color: any): number {
+function drawWrappedText(page: any, text: string, x: number, y: number, size: number, font: any, maxWidth: number, lineHeight: number, color: any, align: 'left' | 'center' = 'left'): number {
   if (!text) return y;
   const paragraphs = text.split('\n');
   let curY = y;
@@ -335,7 +345,8 @@ function drawWrappedText(page: any, text: string, x: number, y: number, size: nu
       const testWidth = font.widthOfTextAtSize(testLine, size);
       
       if (testWidth > maxWidth && currentLine !== '') {
-        page.drawText(currentLine.trim(), { x, y: curY, size, font, color });
+        const drawX = align === 'center' ? x + (maxWidth - font.widthOfTextAtSize(currentLine.trim(), size)) / 2 : x;
+        page.drawText(currentLine.trim(), { x: drawX, y: curY, size, font, color });
         curY -= lineHeight;
         currentLine = word + ' ';
       } else {
@@ -343,7 +354,8 @@ function drawWrappedText(page: any, text: string, x: number, y: number, size: nu
       }
     }
     if (currentLine.trim()) {
-      page.drawText(currentLine.trim(), { x, y: curY, size, font, color });
+      const drawX = align === 'center' ? x + (maxWidth - font.widthOfTextAtSize(currentLine.trim(), size)) / 2 : x;
+      page.drawText(currentLine.trim(), { x: drawX, y: curY, size, font, color });
       curY -= lineHeight;
     }
   }
