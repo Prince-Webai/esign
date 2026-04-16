@@ -211,8 +211,8 @@ export async function POST(req: NextRequest) {
         // Ensure there is space for the label + a bit of value before drawing
         checkPage(50);
 
-        // Draw Label (Wrapped) - using regularFont for 'less bold' look
-        currentY = drawWrappedText(page, field.label.toUpperCase(), 50, currentY, 10, regularFont, 500, 14, rgb(0.1, 0.1, 0.1));
+        // Draw Label (Wrapped) - using font (Bold) as requested
+        currentY = drawWrappedText(page, field.label.toUpperCase(), 50, currentY, 10, font, 500, 14, rgb(0, 0, 0));
         
         // Small gap between label and value
         currentY -= 5;
