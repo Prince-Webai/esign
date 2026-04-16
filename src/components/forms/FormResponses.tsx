@@ -241,9 +241,6 @@ export function FormResponses({ formId }: { formId: string }) {
                            <Download className="w-4 h-4" /> View PDF
                         </button>
                       )}
-                      <button onClick={() => regeneratePdf(sub)} className="flex-1 lg:w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-xl border border-blue-100 font-medium text-sm hover:bg-blue-100 transition-colors shadow-sm">
-                         <Download className="w-4 h-4" /> Regen PDF
-                      </button>
                       <button onClick={() => setDeletingId(sub.id)} className="flex-1 lg:w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-xl border border-red-100 font-medium text-sm hover:bg-red-100 transition-colors shadow-sm">
                          <Trash2 className="w-4 h-4" /> Delete
                       </button>
