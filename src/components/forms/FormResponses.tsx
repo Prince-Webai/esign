@@ -72,6 +72,25 @@ export function FormResponses({ formId }: { formId: string }) {
     }
   }
 
+  // Get all unique keys from data that AREN'T in current fields
+  const getLegacyFields = (data: Record<string, any>) => {
+    if (!data) return [];
+    const currentIds = new Set(fields.map(f => f.id));
+    return Object.keys(data).filter(key => 
+      !currentIds.has(key) && 
+      !key.endsWith('_other') && 
+      key !== 'id' && 
+      key !== 'submitted_at' &&
+      key !== 'pdf_url' &&
+      key !== 'form_id' &&
+      key !== 'status'
+    ).map(key => ({
+      id: key,
+      label: `Legacy: ${key.substring(0, 8)}...`, // We don't have the original label, so show key prefix
+      type: Array.isArray(data[key]) ? 'image' : 'input'
+    }));
+  };
+
   async function regeneratePdf(sub: Submission) {
     try {
       const res = await fetch("/api/submit-form", {
@@ -193,6 +212,24 @@ export function FormResponses({ formId }: { formId: string }) {
                            ) : (
                               <p className="text-sm font-medium text-slate-900 truncate max-w-full">{sub.data?.[field.id] || "—"}</p>
 
+                           )}
+                        </div>
+                      ))}
+
+                      {/* Legacy Data from Deleted Fields */}
+                      {getLegacyFields(sub.data).map(field => (
+                        <div key={field.id} className="space-y-1.5 min-w-0 px-3 py-2 bg-slate-50 rounded-xl border border-slate-200/40 animate-in fade-in duration-500">
+                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Legacy Field</p>
+                           {field.type === 'image' ? (
+                                <div className="flex flex-wrap gap-2 mt-1">
+                                  {(Array.isArray(sub.data[field.id]) ? sub.data[field.id] : [sub.data[field.id]]).map((imgUrl: string, i: number) => (
+                                    <div key={i} className="relative group/img w-12 h-12 rounded-lg overflow-hidden border border-slate-200/60 shadow-sm cursor-pointer" onClick={() => window.open(imgUrl, '_blank')}>
+                                      <img src={imgUrl} alt="Thumbnail" className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-300" />
+                                    </div>
+                                  ))}
+                                </div>
+                           ) : (
+                              <p className="text-sm font-medium text-slate-500 italic truncate max-w-full">{sub.data?.[field.id] || "—"}</p>
                            )}
                         </div>
                       ))}

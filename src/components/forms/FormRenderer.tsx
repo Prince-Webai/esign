@@ -20,19 +20,60 @@ export function FormRenderer({ formId }: { formId: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isDraftRestored, setIsDraftRestored] = useState(false);
+  const DRAFT_KEY = `form_draft_${formId}`;
 
   useEffect(() => { fetchForm(); }, [formId]);
 
   async function fetchForm() {
     setLoading(true);
-    const { data: formData } = await supabase.from("forms").select("*").eq("id", formId).single();
-    if (formData) {
-      setForm(formData);
+    const { data: formDataRes } = await supabase.from("forms").select("*").eq("id", formId).single();
+    if (formDataRes) {
+      setForm(formDataRes);
       const { data: fieldsData } = await supabase.from("form_fields").select("*").eq("form_id", formId).order("order_index", { ascending: true });
-      if (fieldsData) setFields(fieldsData);
+      if (fieldsData) {
+        setFields(fieldsData);
+        
+        // Restore Draft after fields are loaded
+        const savedDraft = localStorage.getItem(DRAFT_KEY);
+        if (savedDraft) {
+          try {
+            const parsed = JSON.parse(savedDraft);
+            setFormData(parsed);
+            setIsDraftRestored(true);
+            setTimeout(() => setIsDraftRestored(false), 3000);
+          } catch (e) {
+            console.error("Failed to restore draft:", e);
+          }
+        }
+      }
     }
     setLoading(false);
   }
+
+  // Auto-save Draft
+  useEffect(() => {
+    if (loading || submitted || !formId || Object.keys(formData).length === 0) return;
+    
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(formData));
+      } catch (e) {
+        // If localStorage is full (e.g. too many base64 images), try saving without images
+        if (e instanceof DOMException && (e.name === "QuotaExceededError" || e.name === "NS_ERROR_DOM_QUOTA_REACHED")) {
+          const textOnlyData = { ...formData };
+          fields.forEach(f => { if (f.type === 'image') delete textOnlyData[f.id]; });
+          try {
+            localStorage.setItem(DRAFT_KEY, JSON.stringify(textOnlyData));
+          } catch (innerE) {
+            console.error("Critical: Even text draft failed to save", innerE);
+          }
+        }
+      }
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [formData, formId, loading, submitted]);
 
   const handleInputChange = (fieldId: string, value: any) => {
     setFormData(prev => ({ ...prev, [fieldId]: value }));
@@ -105,6 +146,9 @@ export function FormRenderer({ formId }: { formId: string }) {
       // 3. Show success immediately
       setSubmitted(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      
+      // Clear draft on success
+      localStorage.removeItem(DRAFT_KEY);
 
       // 4. Fire PDF generation in background (passing the finalData with URLs)
       fetch("/api/submit-form", {
@@ -145,10 +189,35 @@ export function FormRenderer({ formId }: { formId: string }) {
          </div>
          <h1 className="text-4xl font-bold text-slate-900 tracking-tight mb-3">{form.name}</h1>
          <div className="h-1 w-16 bg-emerald-500 rounded-full mb-6" />
+         
+         <div className="flex items-center gap-2 mb-6 h-6">
+           {isDraftRestored ? (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 rounded-full border border-amber-100 animate-in fade-in zoom-in duration-300">
+                <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                <span className="text-[10px] font-bold text-amber-700 uppercase tracking-widest">Draft Restored</span>
+              </div>
+           ) : (
+              Object.keys(formData).length > 0 && (
+                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 rounded-full border border-slate-100 animate-in fade-in duration-500">
+                  <div className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Draft Auto-Saved</span>
+                </div>
+              )
+           )}
+         </div>
+
          {form.description && <p className="text-slate-500 font-medium leading-relaxed whitespace-pre-wrap text-base">{form.description}</p>}
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-10">
+      <form 
+        onSubmit={handleSubmit} 
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && (e.target as HTMLElement).tagName !== 'TEXTAREA') {
+            e.preventDefault();
+          }
+        }}
+        className="space-y-10"
+      >
          {visibleFields.map((field) => (
            field.type === 'header' ? (
              <div key={field.id} className="pt-10 pb-3 border-b-2 border-slate-900 mb-6 mt-14 animate-in fade-in duration-500">
